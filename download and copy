@@ -1,0 +1,94 @@
+# Define the path to the configuration file
+$configFilePath = "C:\path\to\config.txt"
+
+# Read the configuration file
+$configContent = Get-Content $configFilePath
+
+# Extract values from the file
+$url = ($configContent | Select-String -Pattern "^\[URL\]$").Line
+$fileName = "XXXX.zip"  # The specific file you're looking for (e.g., XXXX.zip)
+$password = ($configContent | Select-String -Pattern "^\[Password\]$").Line
+
+# Define download directory and target directory
+$downloadDirectory = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Downloads"))
+$targetDirectory = "C:\Users\Public"
+
+# Create an Internet Explorer COM Object
+$ie = New-Object -ComObject InternetExplorer.Application
+
+# Make Internet Explorer window visible
+$ie.Visible = $true
+
+# Navigate to the RDWeb login page
+$ie.Navigate($url)
+
+# Wait for the page to load
+while ($ie.Busy -or $ie.readyState -ne 4) {
+    Start-Sleep -Seconds 1
+}
+
+# Find the password field (sharecode) and fill it in
+$passwordField = $ie.document.getElementById("sharecode")  # Password field ID
+$passwordField.value = $password  # Set password from the text file
+
+# Find and click the login button (loginBtn)
+$loginButton = $ie.document.getElementById("loginBtn")  # Login button ID
+$loginButton.click()
+
+# Wait for the page to load after login
+while ($ie.Busy -or $ie.readyState -ne 4) {
+    Start-Sleep -Seconds 1
+}
+
+# Search for the file with the specified name (XXXX.zip)
+$fileLinks = $ie.document.getElementsByTagName("a")  # Use "a" tag if it's a link
+foreach ($fileLink in $fileLinks) {
+    if ($fileLink.innerText -eq $fileName) {  # Match the file name
+        # Find the icon element with the class "inline-icon inline-icon--scaled"
+        $icon = $fileLink.ParentNode.querySelector('.inline-icon.inline-icon--scaled')  # Find the icon in the parent node
+        
+        if ($icon -ne $null) {
+            # Find the checkbox next to this file (assuming it's a sibling element)
+            $checkbox = $fileLink.ParentNode.querySelector('input[type="checkbox"]')  # Find checkbox near the file link
+            if ($checkbox -ne $null) {
+                $checkbox.click()  # Select the checkbox
+            }
+        }
+        break  # Exit the loop once the .zip file is found and selected
+    }
+}
+
+# Wait for the selection process to complete
+Start-Sleep -Seconds 3
+
+# Find and click the "Download Folder" button
+$downloadButton = $ie.document.querySelector('button[aria-label="Download Folder"]')  # Button with the download label
+$downloadButton.click()
+
+# Wait for the download to finish
+Start-Sleep -Seconds 10
+
+# Close the Internet Explorer window
+$ie.Quit()
+
+# Wait a little more for the file to fully appear in the Downloads folder
+Start-Sleep -Seconds 5
+
+# Get the specific file (XXXX.zip) in the Downloads folder
+$fileToMove = Get-ChildItem -Path $downloadDirectory -Filter $fileName -ErrorAction SilentlyContinue
+
+# If the file exists, move it to the target directory
+if ($fileToMove) {
+    # Define the target path
+    $targetPath = [System.IO.Path]::Combine($targetDirectory, $fileToMove.Name)
+
+    # Move the file to the target directory
+    try {
+        Move-Item -Path $fileToMove.FullName -Destination $targetPath -Force
+        Write-Host "Moved $($fileToMove.Name) to $targetDirectory"
+    } catch {
+        Write-Host "Failed to move $($fileToMove.Name): $_"
+    }
+} else {
+    Write-Host "The file $fileName was not found in the Downloads folder."
+}
