@@ -6,6 +6,112 @@ $configContent = Get-Content $configFilePath
 
 # Extract values from the file
 $url = ($configContent | Select-String -Pattern "^\[URL\]$").Line
+$fileName = "XXXX.zip"  # The specific file you're looking for (e.g., XXXX.zip)
+$password = ($configContent | Select-String -Pattern "^\[Password\]$").Line
+
+# Create an Internet Explorer COM Object
+$ie = New-Object -ComObject InternetExplorer.Application
+
+# Make Internet Explorer window visible
+$ie.Visible = $true
+
+# Navigate to the RDWeb login page
+$ie.Navigate($url)
+
+# Wait for the page to load
+while ($ie.Busy -or $ie.readyState -ne 4) {
+    Start-Sleep -Seconds 1
+}
+
+# Find the password field (sharecode) and fill it in
+$passwordField = $ie.document.getElementById("sharecode")  # Password field ID
+$passwordField.value = $password  # Set password from the text file
+
+# Find and click the login button (loginBtn)
+$loginButton = $ie.document.getElementById("loginBtn")  # Login button ID
+$loginButton.click()
+
+# Wait for the page to load after login
+while ($ie.Busy -or $ie.readyState -ne 4) {
+    Start-Sleep -Seconds 1
+}
+
+# Search for the file with the specified name (XXXX.zip)
+$fileLinks = $ie.document.getElementsByTagName("a")  # Use "a" tag if it's a link
+foreach ($fileLink in $fileLinks) {
+    if ($fileLink.innerText -eq $fileName) {  # Match the file name
+        # Find the icon element with the class "inline-icon inline-icon--scaled"
+        $icon = $fileLink.ParentNode.querySelector('.inline-icon.inline-icon--scaled')  # Find the icon in the parent node
+        
+        if ($icon -ne $null) {
+            # Find the checkbox next to this file (assuming it's a sibling element)
+            $checkbox = $fileLink.ParentNode.querySelector('input[type="checkbox"]')  # Find checkbox near the file link
+            if ($checkbox -ne $null) {
+                $checkbox.click()  # Select the checkbox
+            }
+        }
+        break  # Exit the loop once the .zip file is found and selected
+    }
+}
+
+# Wait for the selection process to complete
+Start-Sleep -Seconds 3
+
+# Find and click the "Download Folder" button
+$downloadButton = $ie.document.querySelector('button[aria-label="Download Folder"]')  # Button with the download label
+$downloadButton.click()
+
+# Wait for the download to finish
+Start-Sleep -Seconds 10
+
+# Close the Internet Explorer window
+$ie.Quit()
+
+
+
+config File:
+
+[URL]
+https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx
+
+[Folder]
+XXXX
+
+[Password]
+YourPasswordHere
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Define the path to the configuration file
+$configFilePath = "C:\path\to\config.txt"
+
+# Read the configuration file
+$configContent = Get-Content $configFilePath
+
+# Extract values from the file
+$url = ($configContent | Select-String -Pattern "^\[URL\]$").Line
 $folderName = ($configContent | Select-String -Pattern "^\[Folder\]$").Line
 $password = ($configContent | Select-String -Pattern "^\[Password\]$").Line
 
@@ -77,13 +183,3 @@ $ie.Quit()
 
 
 
-config File:
-
-[URL]
-https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx
-
-[Folder]
-XXXX
-
-[Password]
-YourPasswordHere
