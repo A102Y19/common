@@ -53,3 +53,16 @@ Start-Sleep -Seconds 10
 
 # Close the Internet Explorer window
 $ie.Quit()
+
+
+
+config File:
+
+[URL]
+https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx
+
+[Folder]
+XXXX
+
+[Password]
+YourPasswordHere
