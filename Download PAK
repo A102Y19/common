@@ -44,6 +44,27 @@ foreach ($link in $folderLinks) {
 # Wait for the folder content to load
 Start-Sleep -Seconds 5
 
+# Find and select the checkbox for the .zip file by finding the icon
+$fileLinks = $ie.document.getElementsByTagName("a")  # Assuming files are inside anchor tags <a>
+foreach ($fileLink in $fileLinks) {
+    if ($fileLink.innerText -like "*.zip") {  # Check if file name ends with .zip
+        # Find the icon element with the class "inline-icon inline-icon--scaled"
+        $icon = $fileLink.ParentNode.querySelector('.inline-icon.inline-icon--scaled')  # Find the icon in the parent node
+        
+        if ($icon -ne $null) {
+            # Find the checkbox next to this file (assuming it's a sibling element)
+            $checkbox = $fileLink.ParentNode.querySelector('input[type="checkbox"]')  # Find checkbox near the file link
+            if ($checkbox -ne $null) {
+                $checkbox.click()  # Select the checkbox
+            }
+        }
+        break  # Exit the loop once the .zip file is found and selected
+    }
+}
+
+# Wait for the selection process to complete
+Start-Sleep -Seconds 3
+
 # Find and click the "Download Folder" button
 $downloadButton = $ie.document.querySelector('button[aria-label="Download Folder"]')  # Button with the download label
 $downloadButton.click()
