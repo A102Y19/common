@@ -52,20 +52,25 @@ time.sleep(5)
 
 # Main processing loop
 for index, row in df.iterrows():
-    action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
-    requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
-    input_value = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
+    action = row["Action"]
+    requirement = row["Requirement"]
+    input_value = row["Inputs"]
 
-    print(f"\n🔄 Checking action: {action}, Requirement: {requirement}")
+    # Convert to string, remove spaces, and make lowercase
+    action = str(action).strip().lower()
+    requirement = str(requirement).strip().upper()
+    input_value = str(input_value).strip()
+
+    print(f"\n🔄 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
 
     if action == "access ftp path" and requirement == "Y" and input_value:
         print(f"✅ Processing FTP path: {input_value}")
-        access_ftp(driver, input_value)  # Use the same browser
+        access_ftp(driver, input_value)
         print("🎯 Finished executing access_ftp()")
 
-    if action == "access pak file path" and requirement == "Y" and input_value:
+    elif action == "access pak file path" and requirement == "Y" and input_value:
         print(f"🚀 Processing PAK File Path: {input_value}")
-        access_PAK_filepath(input_value)  # Open in a new browser
+        access_PAK_filepath(input_value)
         print("🎯 Finished executing access_PAK_filepath()")
 
 print("\n✅ All tasks completed successfully!")
