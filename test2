@@ -1,18 +1,34 @@
-def access_PAK_filepath(driver, url):
-    print(f"🚀 Opening PAK File Path in new tab: {url}")
+from selenium import webdriver
+from selenium.webdriver.edge.options import Options
+import os
+import time
 
-    # Open new tab
-    driver.execute_script("window.open('about:blank', '_blank');")
-    
-    # Wait for new tab to appear
-    time.sleep(3)  
-    tabs = driver.window_handles  # Get updated tab list
-    
-    if len(tabs) > 1:  
-        driver.switch_to.window(tabs[1])  # Switch to new tab
-        driver.get(url)  # Open URL
-        print(f"✅ Successfully opened PAK file path: {url}")
-    else:
-        print("❌ Error: New tab did not open correctly!")
+# User home directory ni pondadam
+user_home = os.path.expanduser("~")
 
-    time.sleep(5)
+# Edge user data directory path ni set cheyyadam
+edge_user_data_dir = os.path.join(user_home, "AppData", "Local", "Microsoft", "Edge", "User Data")
+
+# Edge options ni configure cheyyadam
+edge_options = Options()
+edge_options.add_argument(f"user-data-dir={edge_user_data_dir}")
+edge_options.add_argument("profile-directory=Default")  # "Default" ni nee profile peru tho marchandi
+
+# Edge browser ni start cheyyadam
+driver = webdriver.Edge(options=edge_options)
+
+# First URL ni open cheyyadam
+driver.get("https://www.firsturl.com")
+time.sleep(5)  # Page load ayyaka 5 seconds wait cheyyadam
+
+# New tab create cheyyadam
+driver.execute_script("window.open('https://www.secondurl.com', '_blank');")
+time.sleep(5)  # New tab load ayyaka 5 seconds wait cheyyadam
+
+# New tab ki switch cheyyadam
+driver.switch_to.window(driver.window_handles[1])
+
+# Ikkada nee original script lo unna actions ni perform cheyyandi
+
+# Work ayyaka, browser ni close cheyyadam
+driver.quit()
