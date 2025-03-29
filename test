@@ -10,19 +10,15 @@ import time
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
 df = pd.read_excel(file_path)
 
-# Set Edge options
-options = webdriver.EdgeOptions()
+# Set Chrome options
+options = webdriver.ChromeOptions()
 options.add_argument("--log-level=3")
-
-# Initialize Edge WebDriver only once
-driver = webdriver.Edge(options=options)
-time.sleep(5)
 
 # Function to access FTP Path
 def access_ftp(driver, url):
-    print(f"🚀 Accessing FTP: {url}")
+    print(f"Accessing FTP: {url}")
     driver.get(url)
-    
+
     try:
         # Wait for the password field and enter password
         password_input = WebDriverWait(driver, 10).until(
@@ -30,26 +26,36 @@ def access_ftp(driver, url):
         )
         password_input.send_keys("admin")  # Hardcoded password
         password_input.send_keys(Keys.RETURN)
-        print("✅ Logged into FTP successfully")
-        
+        print("Password entered, attempting login...")
+
+        # Wait and check if login is successful
+        time.sleep(3)  # Small wait before checking
+        if "error" in driver.page_source.lower():  # Check if any error appears
+            print("Login failed! Check credentials or FTP URL.")
+        else:
+            print("Logged into FTP successfully!")
+
     except Exception as e:
-        print(f"⚠️ No password prompt found or error occurred: {e}")
-    
+        print(f"No password prompt found or error occurred: {e}")
+
     time.sleep(5)  # Wait before proceeding
 
-# Function to access PAK File Path in a new tab
-def access_PAK_filepath(driver, url):
-    print(f"🚀 Opening PAK File Path in new tab: {url}")
+# Function to access PAK File Path in a new browser
+def access_PAK_filepath(url):
+    print(f"Opening PAK File Path: {url}")
 
-    # Open new tab and switch
-    driver.execute_script("window.open('about:blank', '_blank');")
-    driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
-
+    # Open a new Chrome instance
+    new_driver = webdriver.Chrome(options=options)
     time.sleep(3)
-    driver.get(url)  # Open the given URL in the new tab
-    print(f"✅ Successfully opened PAK file path: {url}")
+    new_driver.get(url)  # Open the given URL
+    print(f"Successfully opened PAK file path: {url}")
 
-    time.sleep(5)  # Wait for 5 seconds
+    time.sleep(5)
+    new_driver.quit()  # Close the new browser after opening the URL
+
+# Initialize Chrome WebDriver only once
+driver = webdriver.Chrome(options=options)
+time.sleep(5)
 
 # Main processing loop
 for index, row in df.iterrows():
@@ -62,17 +68,17 @@ for index, row in df.iterrows():
     requirement = str(requirement).strip().upper()
     input_value = str(input_value).strip()
 
-    print(f"\n🔄 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
+    print(f"Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
 
     if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"✅ Processing FTP path: {input_value}")
+        print(f"Processing FTP path: {input_value}")
         access_ftp(driver, input_value)
-        print("🎯 Finished executing access_ftp()")
+        print("Finished executing access_ftp()")
 
     elif action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"🚀 Processing PAK File Path: {input_value}")
-        access_PAK_filepath(driver, input_value)
-        print("🎯 Finished executing access_PAK_filepath()")
+        print(f"Processing PAK File Path: {input_value}")
+        access_PAK_filepath(input_value)
+        print("Finished executing access_PAK_filepath()")
 
-print("\n✅ All tasks completed successfully!")
-driver.quit()  # Close the browser at the end
+print("All tasks completed successfully!")
+driver.quit()  # Close the main browser at the end
