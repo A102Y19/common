@@ -14,12 +14,8 @@ df = pd.read_excel(file_path)
 options = webdriver.EdgeOptions()
 options.add_argument("--log-level=3")
 
-# Initialize Edge WebDriver
-driver = webdriver.Edge(options=options)
-time.sleep(5)  # Let the browser initialize
-
 # Function to access FTP Path
-def access_ftp(url):
+def access_ftp(driver, url):
     print(f"🚀 Accessing FTP: {url}")
     driver.get(url)
     
@@ -50,6 +46,10 @@ def access_PAK_filepath(url):
     time.sleep(5)
     new_driver.quit()  # Close the new browser after opening the URL
 
+# Initialize Edge WebDriver only once
+driver = webdriver.Edge(options=options)
+time.sleep(5)
+
 # Main processing loop
 for index, row in df.iterrows():
     action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
@@ -60,17 +60,13 @@ for index, row in df.iterrows():
 
     if action == "access ftp path" and requirement == "Y" and input_value:
         print(f"✅ Processing FTP path: {input_value}")
-        access_ftp(input_value)
-        driver.quit()  # ✅ Close the first browser before opening the second one
+        access_ftp(driver, input_value)  # Use the same browser
+        print("🎯 Finished executing access_ftp()")
 
-    if action == "access pak file path" and requirement == "Y":
-        print(f"🟢 PAK file path found, preparing to execute function...")
-
-        if input_value:
-            print(f"🚀 Calling access_PAK_filepath({input_value})")
-            access_PAK_filepath(input_value)
-            print("🎯 Finished executing access_PAK_filepath()")
-        else:
-            print("⚠️ PAK File Path URL is empty, skipping execution")
+    if action == "access pak file path" and requirement == "Y" and input_value:
+        print(f"🚀 Processing PAK File Path: {input_value}")
+        access_PAK_filepath(input_value)  # Open in a new browser
+        print("🎯 Finished executing access_PAK_filepath()")
 
 print("\n✅ All tasks completed successfully!")
+driver.quit()  # Close the main browser at the end
