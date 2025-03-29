@@ -5,56 +5,58 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import logging
-
-options = webdriver.EdgeOptions()
-options.add_argument("--log-level=3")
 
 # Load Excel file
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
 df = pd.read_excel(file_path)
 
 # Set up Edge driver
+options = webdriver.EdgeOptions()
+options.add_argument("--log-level=3")
 driver = webdriver.Edge(options=options)  # Initialize Edge WebDriver
-time.sleep(10)  # Consider the initial sleep duration, or use WebDriverWait as an alternative.
+time.sleep(5)  # Initial sleep to allow the browser to launch
 
 def access_ftp(url):
+    """Access FTP Path in the same browser"""
     driver.get(url)
     
     try:
-        # Wait for the password input field (ID: sharecode) to be present
-        password_input = WebDriverWait(driver, 20).until(
+        # Wait for password field
+        password_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "sharecode"))
         )
-        password_input.send_keys("w5qnqhgx")  # Hardcoded password for now
+        password_input.send_keys("w5qnqhgx")  # Hardcoded password
         password_input.send_keys(Keys.RETURN)
         print(f"Logged in successfully to FTP: {url}")
+        
     except Exception as e:
         print(f"No password prompt found or error occurred: {e}")
-    time.sleep(5)
 
-def access_pak_filepath(url):
-    driver.execute_script("window.open('', '_blank');")  # Open new tab
-    driver.switch_to.window(driver.window_handles[-1])  # Switch to new tab
-    driver.get(url)  # Open new URL
+def access_PAK_filepath(url):
+    """Open PAK File Path in a New Browser"""
+    new_driver = webdriver.Edge(options=options)  # Open a new Edge browser
+    new_driver.get(url)
     print(f"Opened PAK file path: {url}")
-    time.sleep(5)
 
-# Main processing loop
+# Main loop to process the Excel file
 for index, row in df.iterrows():
-    action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
-    requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
-    input_value = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
-    
+    action = str(row["Action"]).strip().lower()
+    requirement = str(row["Requirement"]).strip().upper()
+    input_value = str(row["Inputs"]).strip()
+
     print(f"Checking action: {action}, Requirement: {requirement}")
-    
-    if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"Processing FTP path: {input_value}")
-        access_ftp(input_value)
-    
-    if action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"Processing PAK file path URL: {input_value}")
-        access_pak_filepath(input_value)
-    
+
+    if requirement == "Y" and input_value:
+        if action == "access ftp path":
+            print(f"Processing FTP path: {input_value}")
+            access_ftp(input_value)
+            time.sleep(5)
+
+        elif action == "access pak file path":
+            print(f"Processing PAK file path: {input_value}")
+            access_PAK_filepath(input_value)
+            time.sleep(5)
+
+# Final cleanup
 input("Press Enter to exit...")
 print("Automation Completed!")
