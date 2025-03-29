@@ -1,74 +1,9 @@
-import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-
-# Load Excel file
-file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
-df = pd.read_excel(file_path)
-
-# Set Chrome options
-options = webdriver.ChromeOptions()
-options.add_argument("--log-level=3")
-
-# Function to access FTP Path
-def access_ftp(driver, url):
-    print(f"🚀 Accessing FTP: {url}")
-    driver.get(url)
-
-    try:
-        # Wait for the password field and enter password
-        password_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "sharecode"))
-        )
-        password_input.send_keys("admin")  # Hardcoded password
-        password_input.send_keys(Keys.RETURN)
-        print("✅ Logged into FTP successfully")
-
-    except Exception as e:
-        print(f"⚠️ No password prompt found or error occurred: {e}")
-
-    time.sleep(5)  # Wait before proceeding
-
-# Function to access PAK File Path in a new tab
 def access_PAK_filepath(driver, url):
-    print(f"🚀 Opening PAK File Path in new tab: {url}")
+    print(f"🚀 Opening PAK File Path: {url}")
 
-    # Open a new tab and switch to it
-    driver.execute_script("window.open('');")
-    time.sleep(2)
-
-    # Switch to new tab
-    driver.switch_to.window(driver.window_handles[-1])
+    # Open new tab in the same browser
+    driver.execute_script("window.open('about:blank', '_blank');")
+    driver.switch_to.window(driver.window_handles[-1])  # Switch to new tab
     driver.get(url)  # Open the given URL
+
     print(f"✅ Successfully opened PAK file path: {url}")
-
-    time.sleep(5)  # Wait before proceeding
-
-# Initialize Chrome WebDriver only once
-driver = webdriver.Chrome(options=options)
-time.sleep(5)
-
-# Main processing loop
-for index, row in df.iterrows():
-    action = str(row["Action"]).strip().lower()
-    requirement = str(row["Requirement"]).strip().upper()
-    input_value = str(row["Inputs"]).strip()
-
-    print(f"\n🔄 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
-
-    if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"✅ Processing FTP path: {input_value}")
-        access_ftp(driver, input_value)
-        print("🎯 Finished executing access_ftp()")
-
-    elif action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"🚀 Processing PAK File Path: {input_value}")
-        access_PAK_filepath(driver, input_value)
-        print("🎯 Finished executing access_PAK_filepath()")
-
-print("\n✅ All tasks completed successfully!")
-driver.quit()  # Close the main browser at the end
