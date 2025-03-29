@@ -5,13 +5,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import logging
+
+options = webdriver.EdgeOptions()
+options.add_argument("--log-level=3")
 
 # Load Excel file
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
 df = pd.read_excel(file_path)
 
 # Set up Edge driver
-driver = webdriver.Edge()  # Initialize Edge WebDriver
+driver = webdriver.Edge(options=options)  # Initialize Edge WebDriver
 time.sleep(10)  # Consider the initial sleep duration, or use WebDriverWait as an alternative.
 
 def access_ftp(url):
@@ -28,33 +32,38 @@ def access_ftp(url):
         
     except Exception as e:
         print(f"No password prompt found or error occurred: {e}")
-    time.sleep(5)
+    #finally:
+    #    driver.quit()
+
+def access_PAK_filepath(url):
+    driver.execute_script("window.open('', '_blank');") #open new tab
+    #driver.switch_to.window(driver.window_handles[-1]) #switch to new tab
+    #new_driver = webdriver.Edge(options=options)
+    driver.get(url) #open new URL
+    print(f"opened PAK file path")
 
 # Main processing loop
 for index, row in df.iterrows():
     action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
     requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
-    url = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
+    input_value = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
 
-    if action == "access ftp path" and requirement == "Y" and url:
-        print(f"Processing FTP path: {url}")
-        access_ftp(url)
+    print(f"Checking action: {action}, Requirement: {requirement}")
 
+    if action == "access ftp path" and requirement == "Y" and input_value:
+        print(f"Processing FTP path: {input_value}")
+        access_ftp(input_value)
+        time.sleep(5)
+        
+
+    if action == "access PAK file path" and requirement == "Y":
+        print(f"processing PAK file path URL:{input_value}")
+        if input_value:
+            access_PAK_filepath(input_value)
+        else:
+            print("PAK File Path URL is empty")
 # Clean up: close the browser window
 #driver.quit()
 
 input("Press Enter to exit...")
 print("FTP Access Automation Completed!")
-
-
-
-
-
-DevTools listening on ws://127.0.0.1:57740/devtools/browser/32c16f2f-2941-4737-875d-e552bf0edf1d
-[17032:28796:0329/154609.546:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
-[17032:28796:0329/154609.577:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
-Processing FTP path: https://transferus.omp.com/url/ragbqggswx7tzbkj
-[17032:28796:0329/154621.469:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
-Logged in successfully to FTP: https://transferus.omp.com/url/ragbqggswx7tzbkj
-Press Enter to exit...
-FTP Access Automation Completed!
