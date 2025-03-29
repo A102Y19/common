@@ -10,53 +10,70 @@ import time
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
 df = pd.read_excel(file_path)
 
-# Set up Edge driver
+# Set up Edge driver options
 options = webdriver.EdgeOptions()
 options.add_argument("--log-level=3")
-driver = webdriver.Edge(options=options)  # Initialize Edge WebDriver
-time.sleep(5)  # Initial sleep to allow the browser to launch
+
+# Open Edge browser
+driver = webdriver.Edge(options=options)
+time.sleep(5)  # Initial wait to ensure browser stability
 
 def access_ftp(url):
-    """Access FTP Path in the same browser"""
-    driver.get(url)
+    """Function to access FTP URL and enter password if required."""
+    print(f"✅ Accessing FTP: {url}")
     
+    driver.get(url)
     try:
-        # Wait for password field
+        # Wait for the password input field (ID: sharecode) if present
         password_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "sharecode"))
         )
-        password_input.send_keys("w5qnqhgx")  # Hardcoded password
+        password_input.send_keys("admin")  # Hardcoded password (modify later)
         password_input.send_keys(Keys.RETURN)
-        print(f"Logged in successfully to FTP: {url}")
-        
-    except Exception as e:
-        print(f"No password prompt found or error occurred: {e}")
+        print(f"🔐 Logged in successfully to FTP: {url}")
+
+    except Exception:
+        print(f"⚠️ No password prompt found, continuing without login.")
+
+    time.sleep(3)  # Give time before executing the next function
 
 def access_PAK_filepath(url):
-    """Open PAK File Path in a New Browser"""
-    new_driver = webdriver.Edge(options=options)  # Open a new Edge browser
-    new_driver.get(url)
-    print(f"Opened PAK file path: {url}")
+    """Function to access PAK file path in a new browser instance."""
+    print(f"🚀 Opening PAK File Path: {url}")
 
-# Main loop to process the Excel file
+    try:
+        new_driver = webdriver.Edge(options=options)  # Open a new Edge browser
+        time.sleep(3)
+        new_driver.get(url)  # Open the given URL
+        print(f"🎯 Successfully opened PAK file path: {url}")
+
+    except Exception as e:
+        print(f"❌ Error while opening PAK file path: {e}")
+
+# Main processing loop
 for index, row in df.iterrows():
-    action = str(row["Action"]).strip().lower()
-    requirement = str(row["Requirement"]).strip().upper()
-    input_value = str(row["Inputs"]).strip()
+    action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
+    requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
+    input_value = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
 
-    print(f"Checking action: {action}, Requirement: {requirement}")
+    print(f"\n🔄 Checking action: {action}, Requirement: {requirement}")
 
-    if requirement == "Y" and input_value:
-        if action == "access ftp path":
-            print(f"Processing FTP path: {input_value}")
-            access_ftp(input_value)
-            time.sleep(5)
+    if action == "access ftp path" and requirement == "Y" and input_value:
+        print(f"✅ Processing FTP path: {input_value}")
+        access_ftp(input_value)
 
-        elif action == "access pak file path":
-            print(f"Processing PAK file path: {input_value}")
+    if action == "access pak file path" and requirement == "Y":
+        print(f"🟢 PAK file path found, preparing to execute function...")
+
+        if input_value:
+            print(f"🚀 Calling access_PAK_filepath({input_value})")
             access_PAK_filepath(input_value)
-            time.sleep(5)
+            print("🎯 Finished executing access_PAK_filepath()")
+        else:
+            print("⚠️ PAK File Path URL is empty, skipping execution")
 
-# Final cleanup
+# Close the main driver after execution
+driver.quit()
+
+print("\n✅ Script Execution Completed!")
 input("Press Enter to exit...")
-print("Automation Completed!")
