@@ -1,10 +1,4 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-import time
-
-def download_pak_file(driver, file_name):
+def download_PAK_file(driver, file_name):
     try:
         print(f"🔍 Searching for PAK file: {file_name}...")
 
@@ -24,12 +18,12 @@ def download_pak_file(driver, file_name):
         time.sleep(1)  # Wait for the context menu to appear
 
         # Select the second option in the context menu (Download)
-        download_option_xpath = "//div[contains(@class, 'context-menu-item')][2]"  # Adjust based on actual HTML
-        download_option = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.XPATH, download_option_xpath))
-        )
+        actions = ActionChains(driver)
+        action.send_keys('d').perform()  # Adjust based on actual HTML
+        print (" press D to start download")
+        
 
-        download_option.click()
+        
         print("✅ Download triggered successfully!")
 
     except Exception as e:
