@@ -1,125 +1,48 @@
-import pandas as pd
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import time
-import sys  # To stop script on login failure
 
-# Load Excel file
-file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
-df = pd.read_excel(file_path)
-
-# Set Chrome options
-options = webdriver.ChromeOptions()
-options.add_argument("--log-level=3")
-
-# Function to access FTP Path
-def access_ftp(driver, url):
-    print(f"Accessing FTP: {url}")
-    driver.get(url)
-    try:
-        # Wait for password input field
-        password_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "sharecode"))
-        )
-        password_input.send_keys("w5qnqhgx")  # Hardcoded password
-        password_input.send_keys(Keys.RETURN)
-        print("Password entered, waiting for login response...")
-        time.sleep(5)
-        # Check if authentication failed
-        page_source = driver.page_source.lower()
-        if "authentication failed" in page_source or "invalid password" in page_source:
-            print("Login Failed! Check password or FTP URL.")
-            driver.quit()
-            sys.exit("Stopping script due to FTP login failure.")
-        print("FTP Login Successful!")
-    except Exception as e:
-        print(f"Unexpected Error in FTP Login: {e}")
-        driver.quit()
-        sys.exit("Stopping script due to unexpected FTP login error.")
-    time.sleep(5)
-
-# Function to open PAK File Path in a new tab
-def access_PAK_filepath(driver, url):
-    print(f"Opening PAK File Path: {url}")
-    driver.execute_script("window.open('');")
-    time.sleep(2)
-    driver.switch_to.window(driver.window_handles[-1])
-    driver.get(url)
-    print(f"Successfully opened PAK file path: {url}")
-    time.sleep(5)
-
-# Function to download PAK file in the same PAK File Path tab
 def download_PAK_file(driver, file_name):
-    print(f"Searching for file '{file_name}' to download...")
     try:
-        # Find the file element using its name and file list item class.
+        print(f"Processing PAK file download: {file_name}")
+
+        # Construct XPath to find the file element
+        file_xpath = f"//div[contains(@class, 'file-list-item') and contains(text(), '{file_name}')]"
+
+        print(f"Searching for file '{file_name}' to download...")
+        
+        # Wait for the file element to appear
         file_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.XPATH, f"//div[contains(@class, 'file-list-item') and contains(text(), '{file_name}')]")
-            )
+            EC.presence_of_element_located((By.XPATH, file_xpath))
         )
         print("File element found.")
-        # Optionally scroll the element into view
+
+        # Scroll file into view
         driver.execute_script("arguments[0].scrollIntoView();", file_element)
-        # Click to select the file
+        time.sleep(1)  # Small delay to allow UI update
+
+        # Click the file to select it
         file_element.click()
-        print("File element clicked; file should now be selected.")
-        
-        # Click the Download button
+        print("File clicked successfully.")
+
+        # Wait for the 'Download' button to appear and be clickable
+        download_button_xpath = "//button[contains(text(), 'Download')]"
         download_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//button[contains(text(),'Download')]")
-            )
+            EC.element_to_be_clickable((By.XPATH, download_button_xpath))
         )
+        
+        print("Download button found. Clicking it now...")
         download_button.click()
-        print("Download button clicked; download should start.")
+
+        print("Download started successfully.")
+
+    except TimeoutException:
+        print(f"ERROR: Timeout while searching for file '{file_name}'. It may not be present on the page.")
+    except NoSuchElementException:
+        print(f"ERROR: File '{file_name}' or download button not found.")
     except Exception as e:
-        print(f"Error in downloading file: {e}")
-    time.sleep(5)
-
-# Initialize Chrome WebDriver only once
-driver = webdriver.Chrome(options=options)
-time.sleep(5)
-
-# Variable to track if PAK file path tab is open
-pak_tab_opened = False
-
-# Main processing loop
-for index, row in df.iterrows():
-    action = row["Action"]
-    requirement = row["Requirement"]
-    input_value = row["Inputs"]
-
-    # Convert to string, remove spaces, and make lowercase
-    action = str(action).strip().lower()
-    requirement = str(requirement).strip().upper()
-    input_value = str(input_value).strip()
-
-    print(f"Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
-
-    if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"Processing FTP path: {input_value}")
-        access_ftp(driver, input_value)
-        print("Finished executing access_ftp()")
-
-    elif action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"Processing PAK File Path: {input_value}")
-        access_PAK_filepath(driver, input_value)
-        pak_tab_opened = True
-        print("Finished executing access_PAK_filepath()")
-
-    elif action == "download pak file" and requirement == "Y" and input_value:
-        print(f"Processing PAK file download: {input_value}")
-        if pak_tab_opened:
-            # Ensure we are in the PAK File Path tab
-            driver.switch_to.window(driver.window_handles[-1])
-            download_PAK_file(driver, input_value)
-            print("Finished executing download_PAK_file()")
-        else:
-            print("Cannot download PAK file: PAK File Path tab is not open.")
-
-print("All tasks completed successfully!")
-driver.quit()
+        print(f"Unexpected ERROR: {str(e)}")
+    finally:
+        print("Finished executing download_PAK_file()")
