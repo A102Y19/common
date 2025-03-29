@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import sys  # To exit the script if login fails
+import sys  # To stop script on login failure
 
 # Load Excel file
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
@@ -17,39 +17,50 @@ options.add_argument("--log-level=3")
 
 # Function to access FTP Path
 def access_ftp(driver, url):
-    print(f"Accessing FTP: {url}")
+    print(f"🔵 Accessing FTP: {url}")
     driver.get(url)
 
     try:
-        # Wait for the password field and enter password
+        # Wait for password input field
         password_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "sharecode"))
         )
         password_input.send_keys("admin")  # Hardcoded password
         password_input.send_keys(Keys.RETURN)
-        print("Password entered, attempting login...")
+        print("🔵 Password entered, waiting for login response...")
 
-        # Wait and check if login is successful
-        time.sleep(3)  # Small wait before checking
+        # Wait for page load
+        time.sleep(5)
 
-        # Check for login success
-        if "error" in driver.page_source.lower() or "incorrect" in driver.page_source.lower():
-            print("❌ Login failed! Check credentials or FTP URL.")
-            driver.quit()  # Close browser
-            sys.exit("Stopping script due to FTP login failure.")  # Stop script execution
-        else:
-            print("✅ Logged into FTP successfully!")
+        # **1. Check if Authentication Failed**
+        page_source = driver.page_source.lower()
+        if "authentication failed" in page_source or "invalid password" in page_source:
+            print("❌ Login Failed! Check password or FTP URL.")
+            driver.quit()
+            sys.exit("Stopping script due to FTP login failure.")
+
+        # **2. Check if FTP login was successful**
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, "//h1[contains(text(),'FTP')]"))  # Adjust based on actual page
+            )
+            print("✅ FTP Login Successful!")
+        except:
+            print("⚠️ Login might have failed! Checking page content...")
+            print(driver.page_source)  # Debugging: Print full page content
+            driver.quit()
+            sys.exit("Stopping script due to FTP login failure.")
 
     except Exception as e:
-        print(f"⚠️ No password prompt found or error occurred: {e}")
+        print(f"❌ Unexpected Error: {e}")
         driver.quit()
         sys.exit("Stopping script due to unexpected error in FTP login.")
 
-    time.sleep(5)  # Wait before proceeding
+    time.sleep(5)
 
 # Function to access PAK File Path in a new browser
 def access_PAK_filepath(url):
-    print(f"Opening PAK File Path: {url}")
+    print(f"🔵 Opening PAK File Path: {url}")
 
     # Open a new Chrome instance
     new_driver = webdriver.Chrome(options=options)
@@ -75,17 +86,17 @@ for index, row in df.iterrows():
     requirement = str(requirement).strip().upper()
     input_value = str(input_value).strip()
 
-    print(f"Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
+    print(f"🔵 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
 
     if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"Processing FTP path: {input_value}")
+        print(f"🔵 Processing FTP path: {input_value}")
         access_ftp(driver, input_value)  # If fails, script stops here
-        print("Finished executing access_ftp()")
+        print("✅ Finished executing access_ftp()")
 
     elif action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"Processing PAK File Path: {input_value}")
+        print(f"🔵 Processing PAK File Path: {input_value}")
         access_PAK_filepath(input_value)
-        print("Finished executing access_PAK_filepath()")
+        print("✅ Finished executing access_PAK_filepath()")
 
 print("✅ All tasks completed successfully!")
 driver.quit()  # Close the main browser at the end
