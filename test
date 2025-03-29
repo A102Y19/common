@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import sys  # To exit the script if login fails
 
 # Load Excel file
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
@@ -30,13 +31,19 @@ def access_ftp(driver, url):
 
         # Wait and check if login is successful
         time.sleep(3)  # Small wait before checking
-        if "error" in driver.page_source.lower():  # Check if any error appears
-            print("Login failed! Check credentials or FTP URL.")
+
+        # Check for login success
+        if "error" in driver.page_source.lower() or "incorrect" in driver.page_source.lower():
+            print("❌ Login failed! Check credentials or FTP URL.")
+            driver.quit()  # Close browser
+            sys.exit("Stopping script due to FTP login failure.")  # Stop script execution
         else:
-            print("Logged into FTP successfully!")
+            print("✅ Logged into FTP successfully!")
 
     except Exception as e:
-        print(f"No password prompt found or error occurred: {e}")
+        print(f"⚠️ No password prompt found or error occurred: {e}")
+        driver.quit()
+        sys.exit("Stopping script due to unexpected error in FTP login.")
 
     time.sleep(5)  # Wait before proceeding
 
@@ -48,7 +55,7 @@ def access_PAK_filepath(url):
     new_driver = webdriver.Chrome(options=options)
     time.sleep(3)
     new_driver.get(url)  # Open the given URL
-    print(f"Successfully opened PAK file path: {url}")
+    print(f"✅ Successfully opened PAK file path: {url}")
 
     time.sleep(5)
     new_driver.quit()  # Close the new browser after opening the URL
@@ -72,7 +79,7 @@ for index, row in df.iterrows():
 
     if action == "access ftp path" and requirement == "Y" and input_value:
         print(f"Processing FTP path: {input_value}")
-        access_ftp(driver, input_value)
+        access_ftp(driver, input_value)  # If fails, script stops here
         print("Finished executing access_ftp()")
 
     elif action == "access pak file path" and requirement == "Y" and input_value:
@@ -80,5 +87,5 @@ for index, row in df.iterrows():
         access_PAK_filepath(input_value)
         print("Finished executing access_PAK_filepath()")
 
-print("All tasks completed successfully!")
+print("✅ All tasks completed successfully!")
 driver.quit()  # Close the main browser at the end
