@@ -1,0 +1,69 @@
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import logging
+
+options = webdriver.EdgeOptions()
+options.add_argument("--log-level=3")
+
+# Load Excel file
+file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
+df = pd.read_excel(file_path)
+
+# Set up Edge driver
+driver = webdriver.Edge(options=options)  # Initialize Edge WebDriver
+time.sleep(10)  # Consider the initial sleep duration, or use WebDriverWait as an alternative.
+
+def access_ftp(url):
+    driver.get(url)
+    
+    try:
+        # Wait for the password input field (ID: sharecode) to be present
+        password_input = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, "sharecode"))
+        )
+        password_input.send_keys("w5qnqhgx")  # Hardcoded password for now
+        password_input.send_keys(Keys.RETURN)
+        print(f"Logged in successfully to FTP: {url}")
+        
+    except Exception as e:
+        print(f"No password prompt found or error occurred: {e}")
+    #finally:
+    #    driver.quit()
+
+def access_PAK_filepath(url):
+    driver.execute_script("window.open('', '_blank');") #open new tab
+    #driver.switch_to.window(driver.window_handles[-1]) #switch to new tab
+    #new_driver = webdriver.Edge(options=options)
+    driver.get(url) #open new URL
+    print(f"opened PAK file path")
+
+# Main processing loop
+for index, row in df.iterrows():
+    action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
+    requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
+    input_value = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
+
+    print(f"Checking action: {action}, Requirement: {requirement}")
+
+    if action == "access ftp path" and requirement == "Y" and input_value:
+        print(f"Processing FTP path: {input_value}")
+        access_ftp(input_value)
+        time.sleep(5)
+        
+
+    if action == "access PAK file path" and requirement == "Y":
+        print(f"processing PAK file path URL:{input_value}")
+        if input_value:
+            access_PAK_filepath(input_value)
+        else:
+            print("PAK File Path URL is empty")
+# Clean up: close the browser window
+#driver.quit()
+
+input("Press Enter to exit...")
+print("FTP Access Automation Completed!")
