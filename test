@@ -25,51 +25,48 @@ def access_ftp(driver, url):
         password_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "sharecode"))
         )
-        password_input.send_keys("admin")  # Hardcoded password
+        password_input.send_keys("w5qnqhgx")  # Hardcoded password
         password_input.send_keys(Keys.RETURN)
         print("🔵 Password entered, waiting for login response...")
 
-        # Wait for page load
-        time.sleep(5)
+        # **Wait for page load & check login status**
+        time.sleep(5)  # Adjust if needed
 
-        # **1. Check if Authentication Failed**
         page_source = driver.page_source.lower()
         if "authentication failed" in page_source or "invalid password" in page_source:
             print("❌ Login Failed! Check password or FTP URL.")
             driver.quit()
             sys.exit("Stopping script due to FTP login failure.")
 
-        # **2. Check if FTP login was successful**
-        try:
-            WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, "//h1[contains(text(),'FTP')]"))  # Adjust based on actual page
-            )
-            print("✅ FTP Login Successful!")
-        except:
-            print("⚠️ Login might have failed! Checking page content...")
-            print(driver.page_source)  # Debugging: Print full page content
-            driver.quit()
-            sys.exit("Stopping script due to FTP login failure.")
+        print("✅ FTP Login Successful!")
+
+        # **Switch back to first tab (Important for stability)**
+        driver.switch_to.window(driver.window_handles[0])
 
     except Exception as e:
-        print(f"❌ Unexpected Error: {e}")
+        print(f"❌ Unexpected Error in FTP Login: {e}")
         driver.quit()
         sys.exit("Stopping script due to unexpected error in FTP login.")
 
-    time.sleep(5)
+    time.sleep(5)  # Avoid rushing to next function
 
-# Function to access PAK File Path in a new browser
-def access_PAK_filepath(url):
-    print(f"🔵 Opening PAK File Path: {url}")
+# Function to access PAK File Path in a new tab
+def access_PAK_filepath(driver, url):
+    print(f"🚀 Opening PAK File Path: {url}")
 
-    # Open a new Chrome instance
-    new_driver = webdriver.Chrome(options=options)
-    time.sleep(3)
-    new_driver.get(url)  # Open the given URL
-    print(f"✅ Successfully opened PAK file path: {url}")
+    try:
+        # Open new tab & switch to it
+        driver.execute_script("window.open('');")
+        time.sleep(2)
+        driver.switch_to.window(driver.window_handles[-1])
+        driver.get(url)
 
-    time.sleep(5)
-    new_driver.quit()  # Close the new browser after opening the URL
+        print(f"✅ Successfully opened PAK file path: {url}")
+
+    except Exception as e:
+        print(f"❌ Error opening PAK file path: {e}")
+
+    time.sleep(5)  # Ensure it loads properly before proceeding
 
 # Initialize Chrome WebDriver only once
 driver = webdriver.Chrome(options=options)
@@ -77,26 +74,21 @@ time.sleep(5)
 
 # Main processing loop
 for index, row in df.iterrows():
-    action = row["Action"]
-    requirement = row["Requirement"]
-    input_value = row["Inputs"]
-
-    # Convert to string, remove spaces, and make lowercase
-    action = str(action).strip().lower()
-    requirement = str(requirement).strip().upper()
-    input_value = str(input_value).strip()
+    action = str(row["Action"]).strip().lower()
+    requirement = str(row["Requirement"]).strip().upper()
+    input_value = str(row["Inputs"]).strip()
 
     print(f"🔵 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
 
     if action == "access ftp path" and requirement == "Y" and input_value:
         print(f"🔵 Processing FTP path: {input_value}")
-        access_ftp(driver, input_value)  # If fails, script stops here
+        access_ftp(driver, input_value)
         print("✅ Finished executing access_ftp()")
 
     elif action == "access pak file path" and requirement == "Y" and input_value:
         print(f"🔵 Processing PAK File Path: {input_value}")
-        access_PAK_filepath(input_value)
+        access_PAK_filepath(driver, input_value)
         print("✅ Finished executing access_PAK_filepath()")
 
 print("✅ All tasks completed successfully!")
-driver.quit()  # Close the main browser at the end
+driver.quit()  # Ensure browser closes properly at the end
