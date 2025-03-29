@@ -14,6 +14,10 @@ df = pd.read_excel(file_path)
 options = webdriver.EdgeOptions()
 options.add_argument("--log-level=3")
 
+# Initialize Edge WebDriver only once
+driver = webdriver.Edge(options=options)
+time.sleep(5)
+
 # Function to access FTP Path
 def access_ftp(driver, url):
     print(f"🚀 Accessing FTP: {url}")
@@ -33,22 +37,19 @@ def access_ftp(driver, url):
     
     time.sleep(5)  # Wait before proceeding
 
-# Function to access PAK File Path in a new browser
-def access_PAK_filepath(url):
-    print(f"🚀 Opening PAK File Path: {url}")
+# Function to access PAK File Path in a new tab
+def access_PAK_filepath(driver, url):
+    print(f"🚀 Opening PAK File Path in new tab: {url}")
 
-    # Open a new Edge instance
-    new_driver = webdriver.Edge(options=options)
+    # Open new tab and switch
+    driver.execute_script("window.open('about:blank', '_blank');")
+    driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
+
     time.sleep(3)
-    new_driver.get(url)  # Open the given URL
+    driver.get(url)  # Open the given URL in the new tab
     print(f"✅ Successfully opened PAK file path: {url}")
 
-    time.sleep(5)
-    new_driver.quit()  # Close the new browser after opening the URL
-
-# Initialize Edge WebDriver only once
-driver = webdriver.Edge(options=options)
-time.sleep(5)
+    time.sleep(5)  # Wait for 5 seconds
 
 # Main processing loop
 for index, row in df.iterrows():
@@ -70,8 +71,8 @@ for index, row in df.iterrows():
 
     elif action == "access pak file path" and requirement == "Y" and input_value:
         print(f"🚀 Processing PAK File Path: {input_value}")
-        access_PAK_filepath(input_value)
+        access_PAK_filepath(driver, input_value)
         print("🎯 Finished executing access_PAK_filepath()")
 
 print("\n✅ All tasks completed successfully!")
-driver.quit()  # Close the main browser at the end
+driver.quit()  # Close the browser at the end
