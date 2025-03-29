@@ -1,38 +1,74 @@
+import pandas as pd
 from selenium import webdriver
-from selenium.webdriver.edge.options import Options
-from selenium.webdriver.common.window import WindowTypes
-import os
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# 1. User Home Directory ni Pondadam
-user_home = os.path.expanduser("~")
+# Load Excel file
+file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
+df = pd.read_excel(file_path)
 
-# 2. Edge User Data Directory Path ni Set cheyyadam
-edge_user_data_dir = os.path.join(user_home, "AppData", "Local", "Microsoft", "Edge", "User Data")
+# Set Chrome options
+options = webdriver.ChromeOptions()
+options.add_argument("--log-level=3")
 
-# 3. Edge Options ni Configure cheyyadam
-edge_options = Options()
-edge_options.add_argument(f"user-data-dir={edge_user_data_dir}")
-edge_options.add_argument("profile-directory=Default")  # "Default" ni mi profile peru tho marchandi
+# Function to access FTP Path
+def access_ftp(driver, url):
+    print(f"🚀 Accessing FTP: {url}")
+    driver.get(url)
 
-# 4. Edge Browser ni Start cheyyadam
-driver = webdriver.Edge(options=edge_options)
+    try:
+        # Wait for the password field and enter password
+        password_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "sharecode"))
+        )
+        password_input.send_keys("admin")  # Hardcoded password
+        password_input.send_keys(Keys.RETURN)
+        print("✅ Logged into FTP successfully")
 
-try:
-    # 5. First URL ni Open cheyyadam
-    driver.get("https://www.google.com")
-    time.sleep(5)  # Page load ayyaka 5 seconds wait cheyyadam
+    except Exception as e:
+        print(f"⚠️ No password prompt found or error occurred: {e}")
 
-    # 6. New Tab ni Create cheyyadam mariyu Switch cheyyadam
-    driver.switch_to.new_window(WindowTypes.TAB)
-    driver.get("https://www.geeksforgeeks.org")
-    time.sleep(5)  # New tab load ayyaka 5 seconds wait cheyyadam
+    time.sleep(5)  # Wait before proceeding
 
-    # Ikkada kotha tab lo kavalsina actions ni perform cheyyandi
+# Function to access PAK File Path in a new tab
+def access_PAK_filepath(driver, url):
+    print(f"🚀 Opening PAK File Path in new tab: {url}")
 
-except Exception as e:
-    print(f"An error occurred: {e}")
+    # Open a new tab and switch to it
+    driver.execute_script("window.open('');")
+    time.sleep(2)
 
-finally:
-    # 7. Browser ni Close cheyyadam
-    driver.quit()
+    # Switch to new tab
+    driver.switch_to.window(driver.window_handles[-1])
+    driver.get(url)  # Open the given URL
+    print(f"✅ Successfully opened PAK file path: {url}")
+
+    time.sleep(5)  # Wait before proceeding
+
+# Initialize Chrome WebDriver only once
+driver = webdriver.Chrome(options=options)
+time.sleep(5)
+
+# Main processing loop
+for index, row in df.iterrows():
+    action = str(row["Action"]).strip().lower()
+    requirement = str(row["Requirement"]).strip().upper()
+    input_value = str(row["Inputs"]).strip()
+
+    print(f"\n🔄 Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
+
+    if action == "access ftp path" and requirement == "Y" and input_value:
+        print(f"✅ Processing FTP path: {input_value}")
+        access_ftp(driver, input_value)
+        print("🎯 Finished executing access_ftp()")
+
+    elif action == "access pak file path" and requirement == "Y" and input_value:
+        print(f"🚀 Processing PAK File Path: {input_value}")
+        access_PAK_filepath(driver, input_value)
+        print("🎯 Finished executing access_PAK_filepath()")
+
+print("\n✅ All tasks completed successfully!")
+driver.quit()  # Close the main browser at the end
