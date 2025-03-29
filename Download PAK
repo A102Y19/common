@@ -2,37 +2,59 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # Load Excel file
-df = pd.read_excel("C:/PAK/PAK_Standard_requirement.xlsx")  # Change file name if needed
+file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
+df = pd.read_excel(file_path)
 
-# Set up Chrome driver
-options = webdriver.ChromeOptions()
-options.add_experimental_option("detach", True)
-driver = webdriver.Chrome(options=options)
+# Set up Edge driver
+driver = webdriver.Edge()  # Initialize Edge WebDriver
+time.sleep(10)  # Consider the initial sleep duration, or use WebDriverWait as an alternative.
 
 def access_ftp(url):
     driver.get(url)
-    time.sleep(2)  # Wait for page to load
     
     try:
-        # Check if password field is present
-        password_field = driver.find_element(By.NAME, "password")  # Change selector if needed
-        password_field.send_keys("admin")  # Hardcoded password for now
-        password_field.send_keys(Keys.RETURN)
+        # Wait for the password input field (ID: sharecode) to be present
+        password_input = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, "sharecode"))
+        )
+        password_input.send_keys("w5qnqhgx")  # Hardcoded password for now
+        password_input.send_keys(Keys.RETURN)
         print(f"Logged in successfully to FTP: {url}")
-    except:
-        print(f"No password required for FTP: {url}")
+        
+    except Exception as e:
+        print(f"No password prompt found or error occurred: {e}")
+    time.sleep(5)
 
-# Iterate through Excel data
+# Main processing loop
 for index, row in df.iterrows():
-    action = row["A"].strip().lower() if pd.notna(row["A"]) else ""
-    requirement = row["B"].strip().upper() if pd.notna(row["B"]) else "N"
-    url = row["C"].strip() if pd.notna(row["C"]) else ""
-    
-    if action == "access ftp path" and requirement == "Y" and url:
-        access_ftp(url)
-        time.sleep(2)
+    action = row["Action"].strip().lower() if pd.notna(row["Action"]) else ""
+    requirement = row["Requirement"].strip().upper() if pd.notna(row["Requirement"]) else "N"
+    url = row["Inputs"].strip() if pd.notna(row["Inputs"]) else ""
 
+    if action == "access ftp path" and requirement == "Y" and url:
+        print(f"Processing FTP path: {url}")
+        access_ftp(url)
+
+# Clean up: close the browser window
+#driver.quit()
+
+input("Press Enter to exit...")
 print("FTP Access Automation Completed!")
+
+
+
+
+
+DevTools listening on ws://127.0.0.1:57740/devtools/browser/32c16f2f-2941-4737-875d-e552bf0edf1d
+[17032:28796:0329/154609.546:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
+[17032:28796:0329/154609.577:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
+Processing FTP path: https://transferus.omp.com/url/ragbqggswx7tzbkj
+[17032:28796:0329/154621.469:ERROR:fallback_task_provider.cc(126)] Every renderer should have at least one task provided by a primary task provider. If a "Renderer" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/739782.
+Logged in successfully to FTP: https://transferus.omp.com/url/ragbqggswx7tzbkj
+Press Enter to exit...
+FTP Access Automation Completed!
