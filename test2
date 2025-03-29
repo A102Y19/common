@@ -1,0 +1,18 @@
+def access_PAK_filepath(driver, url):
+    print(f"🚀 Opening PAK File Path in new tab: {url}")
+
+    # Open new tab
+    driver.execute_script("window.open('about:blank', '_blank');")
+    
+    # Wait for new tab to appear
+    time.sleep(3)  
+    tabs = driver.window_handles  # Get updated tab list
+    
+    if len(tabs) > 1:  
+        driver.switch_to.window(tabs[1])  # Switch to new tab
+        driver.get(url)  # Open URL
+        print(f"✅ Successfully opened PAK file path: {url}")
+    else:
+        print("❌ Error: New tab did not open correctly!")
+
+    time.sleep(5)
