@@ -1,34 +1,38 @@
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
+from selenium.webdriver.common.window import WindowTypes
 import os
 import time
 
-# User home directory ni pondadam
+# 1. User Home Directory ni Pondadam
 user_home = os.path.expanduser("~")
 
-# Edge user data directory path ni set cheyyadam
+# 2. Edge User Data Directory Path ni Set cheyyadam
 edge_user_data_dir = os.path.join(user_home, "AppData", "Local", "Microsoft", "Edge", "User Data")
 
-# Edge options ni configure cheyyadam
+# 3. Edge Options ni Configure cheyyadam
 edge_options = Options()
 edge_options.add_argument(f"user-data-dir={edge_user_data_dir}")
-edge_options.add_argument("profile-directory=Default")  # "Default" ni nee profile peru tho marchandi
+edge_options.add_argument("profile-directory=Default")  # "Default" ni mi profile peru tho marchandi
 
-# Edge browser ni start cheyyadam
+# 4. Edge Browser ni Start cheyyadam
 driver = webdriver.Edge(options=edge_options)
 
-# First URL ni open cheyyadam
-driver.get("https://www.firsturl.com")
-time.sleep(5)  # Page load ayyaka 5 seconds wait cheyyadam
+try:
+    # 5. First URL ni Open cheyyadam
+    driver.get("https://www.google.com")
+    time.sleep(5)  # Page load ayyaka 5 seconds wait cheyyadam
 
-# New tab create cheyyadam
-driver.execute_script("window.open('https://www.secondurl.com', '_blank');")
-time.sleep(5)  # New tab load ayyaka 5 seconds wait cheyyadam
+    # 6. New Tab ni Create cheyyadam mariyu Switch cheyyadam
+    driver.switch_to.new_window(WindowTypes.TAB)
+    driver.get("https://www.geeksforgeeks.org")
+    time.sleep(5)  # New tab load ayyaka 5 seconds wait cheyyadam
 
-# New tab ki switch cheyyadam
-driver.switch_to.window(driver.window_handles[1])
+    # Ikkada kotha tab lo kavalsina actions ni perform cheyyandi
 
-# Ikkada nee original script lo unna actions ni perform cheyyandi
+except Exception as e:
+    print(f"An error occurred: {e}")
 
-# Work ayyaka, browser ni close cheyyadam
-driver.quit()
+finally:
+    # 7. Browser ni Close cheyyadam
+    driver.quit()
