@@ -1,48 +1,24 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-import time
 
-def download_PAK_file(driver, file_name):
+def get_file_class(driver, file_name):
     try:
-        print(f"Processing PAK file download: {file_name}")
+        print(f"🔍 Searching for file: {file_name}...")
 
-        # Construct XPath to find the file element
         file_xpath = f"//div[contains(@class, 'file-list-item') and contains(text(), '{file_name}')]"
 
-        print(f"Searching for file '{file_name}' to download...")
-        
-        # Wait for the file element to appear
-        file_element = WebDriverWait(driver, 10).until(
+        file_element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.XPATH, file_xpath))
         )
-        print("File element found.")
 
-        # Scroll file into view
-        driver.execute_script("arguments[0].scrollIntoView();", file_element)
-        time.sleep(1)  # Small delay to allow UI update
+        file_class = file_element.get_attribute("class")  # Extract class attribute
 
-        # Click the file to select it
-        file_element.click()
-        print("File clicked successfully.")
+        print(f"✅ Found file: {file_name}")
+        print(f"📌 Class of the file element: {file_class}")
 
-        # Wait for the 'Download' button to appear and be clickable
-        download_button_xpath = "//button[contains(text(), 'Download')]"
-        download_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, download_button_xpath))
-        )
-        
-        print("Download button found. Clicking it now...")
-        download_button.click()
+        return file_class
 
-        print("Download started successfully.")
-
-    except TimeoutException:
-        print(f"ERROR: Timeout while searching for file '{file_name}'. It may not be present on the page.")
-    except NoSuchElementException:
-        print(f"ERROR: File '{file_name}' or download button not found.")
     except Exception as e:
-        print(f"Unexpected ERROR: {str(e)}")
-    finally:
-        print("Finished executing download_PAK_file()")
+        print(f"❌ ERROR: File '{file_name}' not found. Details: {e}")
+        return None
