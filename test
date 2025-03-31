@@ -1,44 +1,47 @@
-Processing FTP path: https://transferus.omp.com/url/ragbqggswx7tzbkj
-Accessing FTP: https://transferus.omp.com/url/ragbqggswx7tzbkj
-Password entered, waiting for login response...
-FTP Login Successful!
-Finished executing access_ftp()
-Checking action: 'access pak file path', Requirement: 'Y', Input: 'https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/ragbqggswx7tzbkj#expl-tabl./SHARED/dverbeeck/wKMMADxiUK9qtjrH/from_omp/Optimus%20SP/R03_04'
-Processing PAK File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/ragbqggswx7tzbkj#expl-tabl./SHARED/dverbeeck/wKMMADxiUK9qtjrH/from_omp/Optimus%20SP/R03_04
-Opening PAK File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/ragbqggswx7tzbkj#expl-tabl./SHARED/dverbeeck/wKMMADxiUK9qtjrH/from_omp/Optimus%20SP/R03_04
-Successfully opened PAK file path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/ragbqggswx7tzbkj#expl-tabl./SHARED/dverbeeck/wKMMADxiUK9qtjrH/from_omp/Optimus%20SP/R03_04
-Finished executing access_PAK_filepath()
-Checking action: 'download pak file', Requirement: 'Y', Input: '03_04_009.zip'
-Processing PAK file download: 03_04_009.zip
-🔍 Searching for PAK file: 03_04_009.zip...
-❌ ERROR: Could not download file '03_04_009.zip'. Details: Message: invalid selector: Unable to locate an element with the xpath expression //span[@role='gridcell' and @aria-labelledby='genfilename' and contains(text()) '03_04_009.zip')] because of the following error:
-SyntaxError: Failed to execute 'evaluate' on 'Document': The string '//span[@role='gridcell' and @aria-labelledby='genfilename' and contains(text()) '03_04_009.zip')]' is not a valid XPath expression.
-  (Session info: chrome=134.0.6998.178); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalid-selector-exception
-Stacktrace:
-        GetHandleVerifier [0x00007FF68BFE4C25+3179557]
-        (No symbol) [0x00007FF68BC488A0]
-        (No symbol) [0x00007FF68BAD91CA]
-        (No symbol) [0x00007FF68BAE0B98]
-        (No symbol) [0x00007FF68BAE3BCC]
-        (No symbol) [0x00007FF68BAE3C9F]
-        (No symbol) [0x00007FF68BB2F320]
-        (No symbol) [0x00007FF68BB2FC9C]
-        (No symbol) [0x00007FF68BB83627]
-        (No symbol) [0x00007FF68BB57C6F]
-        (No symbol) [0x00007FF68BB802F3]
-        (No symbol) [0x00007FF68BB57A03]
-        (No symbol) [0x00007FF68BB206D0]
-        (No symbol) [0x00007FF68BB21983]
-        GetHandleVerifier [0x00007FF68C0467CD+3579853]
-        GetHandleVerifier [0x00007FF68C05D1D2+3672530]
-        GetHandleVerifier [0x00007FF68C052153+3627347]
-        GetHandleVerifier [0x00007FF68BDB092A+868650]
-        (No symbol) [0x00007FF68BC52FFF]
-        (No symbol) [0x00007FF68BC4F4A4]
-        (No symbol) [0x00007FF68BC4F646]
-        (No symbol) [0x00007FF68BC3EAA9]
-        BaseThreadInitThunk [0x00007FFC0FDE259D+29]
-        RtlUserThreadStart [0x00007FFC10EEAF38+40]
+def get_download_path():
+    """Get the default downloads folder path based on OS."""
+    return os.path.join(os.path.expanduser("~"), "Downloads")
 
-Finished executing download_PAK_file()
-press Enter to close
+def download_PAK_file(driver, file_name):
+    print(f"⬇️ Searching for file: {file_name} to download...")
+
+    try:
+        # **Step 1: Find and click the file to open preview**
+        file_element = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, f"//span[@role='gridcell' and contains(text(), '{file_name}')]")
+            )
+        )
+        driver.execute_script("arguments[0].click();", file_element)
+        print(f"✅ File '{file_name}' selected, opening preview...")
+
+        # Wait for the file preview to load
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]"))
+        )
+        print("🔄 File preview loaded...")
+
+        # **Step 2: Click the Download button**
+        download_button = driver.find_element(By.XPATH, "//i[contains(@class, 'fa-download')]")
+        driver.execute_script("arguments[0].click();", download_button)
+
+        print(f"✅ File '{file_name}' download started!")
+
+        # **Step 3: Confirm Download**
+        download_path = get_download_path()  # Get OS-specific download folder
+        download_file_path = os.path.join(download_path, file_name)
+        timeout = 30  # Max wait time for download (adjust as needed)
+
+        while timeout > 0:
+            if os.path.exists(download_file_path):
+                print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
+                return True
+            time.sleep(2)  # Wait before checking again
+            timeout -= 2
+
+        print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
+        return False
+
+    except Exception as e:
+        print(f"❌ Error: Unable to download file '{file_name}' - {e}")
+        return False
