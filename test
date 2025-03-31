@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 import time
 import sys  # To stop script on login failure
 
@@ -62,10 +61,10 @@ def download_PAK_file(driver, file_name):
     print(f"⬇️ Searching for file: {file_name} to download...")
 
     try:
-        # **Step 1: Find and click the file to open preview**
+        # Step 1: Find and click the file to open preview
         file_element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located(
-                (By.XPATH, f"//span[@role='gridcell'] [@aria-labelledby='genfilename' and contains(text(), '{file_name}')]")
+                (By.XPATH, f"//span[@role='gridcell' and @aria-labelledby='genfilename' and text()='{file_name}']")
             )
         )
         driver.execute_script("arguments[0].click();", file_element)
@@ -77,23 +76,26 @@ def download_PAK_file(driver, file_name):
         )
         print("🔄 File preview loaded...")
 
-        # **Step 2: Click the Download button**
-        download_button = driver.find_element(By.XPATH, "//i[contains(@class, 'fa-download')]")
+        # **Step 2: Click the actual Download button**
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[text()='{file_name}']//following::i[contains(@class, 'fa-download')][1]"))
+        )
+        
+        # Click the download button explicitly
         driver.execute_script("arguments[0].click();", download_button)
+        print(f"✅ Download initiated for file: '{file_name}'")
 
-        print(f"✅ File '{file_name}' download started!")
-
-        # **Step 3: Confirm Download**
-        download_path = get_download_path()  # Get OS-specific download folder
+        # Wait and confirm file is downloaded
+        download_path = get_download_path()
         download_file_path = os.path.join(download_path, file_name)
-        timeout = 30  # Max wait time for download (adjust as needed)
+        timeout = 30
 
         while timeout > 0:
             if os.path.exists(download_file_path):
                 print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
                 return True
-            time.sleep(30)  # Wait before checking again
-            timeout -= 2
+            time.sleep(1)
+            timeout -= 1
 
         print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
         return False
@@ -101,12 +103,69 @@ def download_PAK_file(driver, file_name):
     except Exception as e:
         print(f"❌ Error: Unable to download file '{file_name}' - {e}")
         return False
+
+# Function to open Executable File Path in a new tab
+def access_executable_filepath(driver, url):
+    print(f"Opening Executable File Path: {url}")
+    driver.execute_script("window.open('');")
+    time.sleep(2)
+    driver.switch_to.window(driver.window_handles[-1])
+    driver.get(url)
+    print(f"Successfully opened Executable file path: {url}")
+    time.sleep(5)
+
+# Function to download Executable file in the same Executable File Path tab
+def download_executable_file(driver, file_name):
+    print(f"⬇️ Searching for executable: {file_name} to download...")
+
+    try:
+        # Find and click on the executable file element to initiate download
+        exec_element = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, f"//span[@role='gridcell' and text()='{file_name}']")
+            )
+        )
+        driver.execute_script("arguments[0].click();", exec_element)
+        print(f"✅ Executable '{file_name}' selected for download...")
+
+        # Wait for the download confirmation to load (implement appropriate wait as per the app)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]"))
+        )
+
+        # Click the actual download button
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[text()='{file_name}']//following::i[contains(@class, 'fa-download')][1]"))
+        )
+        driver.execute_script("arguments[0].click();", download_button)
+        print(f"✅ Download initiated for executable: '{file_name}'")
+
+        # Wait and confirm file is downloaded
+        download_path = get_download_path()
+        download_file_path = os.path.join(download_path, file_name)
+        timeout = 30
+
+        while timeout > 0:
+            if os.path.exists(download_file_path):
+                print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
+                return True
+            time.sleep(1)
+            timeout -= 1
+
+        print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
+        return False
+
+    except Exception as e:
+        print(f"❌ Error: Unable to download executable '{file_name}' - {e}")
+        return False
+
 # Initialize Chrome WebDriver only once
 driver = webdriver.Chrome(options=options)
 time.sleep(5)
 
 # Variable to track if PAK file path tab is open
 pak_tab_opened = False
+exec_tab_opened = False
 
 # Main processing loop
 for index, row in df.iterrows():
@@ -142,6 +201,22 @@ for index, row in df.iterrows():
         else:
             print("Cannot download PAK file: PAK File Path tab is not open.")
 
-input ("press Enter to close")
+    elif action == "access executable file path" and requirement == "Y" and input_value:
+        print(f"Processing Executable File Path: {input_value}")
+        access_executable_filepath(driver, input_value)
+        exec_tab_opened = True
+        print("Finished executing access_executable_filepath()")
+
+    elif action == "download executable file" and requirement == "Y" and input_value:
+        print(f"Processing Executable file download: {input_value}")
+        if exec_tab_opened:
+            # Ensure we are in the Executable File Path tab
+            driver.switch_to.window(driver.window_handles[-1])
+            download_executable_file(driver, input_value)
+            print("Finished executing download_executable_file()")
+        else:
+            print("Cannot download Executable file: Executable File Path tab is not open.")
+
+input("Press Enter to close")
 print("All tasks completed successfully!")
-#driver.quit()
+# driver.quit()
