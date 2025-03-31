@@ -61,11 +61,11 @@ def access_PAK_filepath(driver, url):
 # Function to download PAK file
 def download_PAK_file(driver, file_name):
     print(f"⬇️ Searching for file: {file_name} to download...")
-
+    
     try:
         file_element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located(
-                (By.XPATH, f"//span[@role='gridcell' and @aria-labelledby='genfilename' and text()='{file_name}']")  
+                (By.XPATH, f"//span[@role='gridcell' and @aria-labelledby='genfilename' and text()='{file_name}']")
             )
         )
         driver.execute_script("arguments[0].click();", file_element)
@@ -73,8 +73,8 @@ def download_PAK_file(driver, file_name):
 
         # Wait for the file preview to load
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]"))
-        )
+            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]")
+        ))
 
         # Click the actual Download button
         download_button = WebDriverWait(driver, 10).until(
@@ -91,34 +91,32 @@ def download_PAK_file(driver, file_name):
         while timeout > 0:
             if os.path.exists(download_file_path):
                 print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
-                return True
+                return download_file_path  # Returning the file path
             time.sleep(1)
             timeout -= 1
 
         print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
-        return False
+        return None
 
     except Exception as e:
         print(f"❌ Error: Unable to download file '{file_name}' - {e}")
-        return False
+        return None
 
 # Function to transfer the downloaded PAK file to a target folder
-def transfer_PAK_file(file_name, target_path):
+def transfer_PAK_file(source_file, target_path):
     """Move the downloaded file to a specific target folder."""
-    download_path = get_download_path()  # Source (Downloads)
-    source_file = os.path.join(download_path, file_name)  # Full source path
-    destination_file = os.path.join(target_path, file_name)  # Full target path
+    destination_file = os.path.join(target_path, os.path.basename(source_file))
 
     try:
         if os.path.exists(source_file):
-            shutil.move(source_file, destination_file)  # Move file
+            shutil.move(source_file, destination_file)
             print(f"✅ File moved successfully to: {destination_file}")
             return True
         else:
-            print(f"❌ File move failed: '{file_name}' not found in {download_path}")
+            print(f"❌ File move failed: '{source_file}' not found")
             return False
     except Exception as e:
-        print(f"❌ Error moving file '{file_name}': {e}")
+        print(f"❌ Error moving file '{source_file}': {e}")
         return False
 
 # Initialize Chrome WebDriver only once
@@ -127,6 +125,7 @@ time.sleep(5)
 
 # Variable to track open tabs
 pak_tab_opened = False
+downloaded_file_path = None
 
 # Main processing loop
 for index, row in df.iterrows():
@@ -137,46 +136,28 @@ for index, row in df.iterrows():
     print(f"Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
 
     if action == "access ftp path" and requirement == "Y" and input_value:
-        print(f"Processing FTP path: {input_value}")
         access_ftp(driver, input_value)
-
+    
     elif action == "access pak file path" and requirement == "Y" and input_value:
-        print(f"Processing PAK File Path: {input_value}")
         access_PAK_filepath(driver, input_value)
         pak_tab_opened = True
-
+    
     elif action == "download pak file" and requirement == "Y" and input_value:
-        print(f"Processing PAK file download: {input_value}")
         if pak_tab_opened:
             driver.switch_to.window(driver.window_handles[-1])
-            download_success = download_PAK_file(driver, input_value)
-            if download_success:
-                print(f"✅ File '{input_value}' downloaded successfully.")
-            else:
-                print(f"❌ Download failed for '{input_value}'.")
+            downloaded_file_path = download_PAK_file(driver, input_value)
         else:
             print("Cannot download PAK file: PAK File Path tab is not open.")
-
+    
     elif action == "transfer pak file" and requirement == "Y" and input_value:
-        print(f"Processing file transfer: {input_value}")
-        
-        try:
-            file_name, target_path = input_value.split(";")  # Split filename & target path
-            file_name = file_name.strip()
-            target_path = target_path.strip()
-
-            if os.path.exists(target_path):
-                transfer_success = transfer_PAK_file(file_name, target_path)
-                if transfer_success:
-                    print(f"✅ File '{file_name}' transferred successfully.")
-                else:
-                    print(f"❌ Transfer failed for '{file_name}'.")
+        if downloaded_file_path:
+            transfer_success = transfer_PAK_file(downloaded_file_path, input_value)
+            if transfer_success:
+                print(f"✅ File transferred successfully to {input_value}.")
             else:
-                print(f"❌ Target path '{target_path}' does not exist. Please check and create the folder.")
-
-        except ValueError:
-            print("❌ Invalid input format. Expected format: 'filename;target_path'")
+                print(f"❌ Transfer failed to {input_value}.")
+        else:
+            print("❌ No file available to transfer.")
 
 input("Press Enter to close")
 print("All tasks completed successfully!")
-# driver.quit()
