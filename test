@@ -1,3 +1,59 @@
+import os
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+import sys  # To stop script on login failure
+
+# Load Excel file
+file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
+df = pd.read_excel(file_path)
+
+# Set Chrome options
+options = webdriver.ChromeOptions()
+options.add_argument("--log-level=3")
+
+# Function to access FTP Path
+def access_ftp(driver, url):
+    print(f"Accessing FTP: {url}")
+    driver.get(url)
+    try:
+        # Wait for password input field
+        password_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "sharecode"))
+        )
+        password_input.send_keys("w5qnqhgx")  # Hardcoded password
+        password_input.send_keys(Keys.RETURN)
+        print("Password entered, waiting for login response...")
+        time.sleep(5)
+        # Check if authentication failed
+        page_source = driver.page_source.lower()
+        if "authentication failed" in page_source or "invalid password" in page_source:
+            print("Login Failed! Check password or FTP URL.")
+            driver.quit()
+            sys.exit("Stopping script due to FTP login failure.")
+        print("FTP Login Successful!")
+    except Exception as e:
+        print(f"Unexpected Error in FTP Login: {e}")
+        driver.quit()
+        sys.exit("Stopping script due to unexpected FTP login error.")
+    time.sleep(5)
+
+# Function to open PAK File Path in a new tab
+def access_PAK_filepath(driver, url):
+    print(f"Opening PAK File Path: {url}")
+    driver.execute_script("window.open('');")
+    time.sleep(2)
+    driver.switch_to.window(driver.window_handles[-1])
+    driver.get(url)
+    print(f"Successfully opened PAK file path: {url}")
+    time.sleep(5)
+
+# Function to download PAK file in the same PAK File Path tab
 def get_download_path():
     """Get the default downloads folder path based on OS."""
     return os.path.join(os.path.expanduser("~"), "Downloads")
@@ -45,3 +101,47 @@ def download_PAK_file(driver, file_name):
     except Exception as e:
         print(f"❌ Error: Unable to download file '{file_name}' - {e}")
         return False
+# Initialize Chrome WebDriver only once
+driver = webdriver.Chrome(options=options)
+time.sleep(5)
+
+# Variable to track if PAK file path tab is open
+pak_tab_opened = False
+
+# Main processing loop
+for index, row in df.iterrows():
+    action = row["Action"]
+    requirement = row["Requirement"]
+    input_value = row["Inputs"]
+
+    # Convert to string, remove spaces, and make lowercase
+    action = str(action).strip().lower()
+    requirement = str(requirement).strip().upper()
+    input_value = str(input_value).strip()
+
+    print(f"Checking action: '{action}', Requirement: '{requirement}', Input: '{input_value}'")
+
+    if action == "access ftp path" and requirement == "Y" and input_value:
+        print(f"Processing FTP path: {input_value}")
+        access_ftp(driver, input_value)
+        print("Finished executing access_ftp()")
+
+    elif action == "access pak file path" and requirement == "Y" and input_value:
+        print(f"Processing PAK File Path: {input_value}")
+        access_PAK_filepath(driver, input_value)
+        pak_tab_opened = True
+        print("Finished executing access_PAK_filepath()")
+
+    elif action == "download pak file" and requirement == "Y" and input_value:
+        print(f"Processing PAK file download: {input_value}")
+        if pak_tab_opened:
+            # Ensure we are in the PAK File Path tab
+            driver.switch_to.window(driver.window_handles[-1])
+            download_PAK_file(driver, input_value)
+            print("Finished executing download_PAK_file()")
+        else:
+            print("Cannot download PAK file: PAK File Path tab is not open.")
+
+input ("press Enter to close")
+print("All tasks completed successfully!")
+#driver.quit()
