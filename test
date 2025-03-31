@@ -65,7 +65,7 @@ def download_PAK_file(driver, file_name):
     try:
         file_element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located(
-                (By.XPATH, f"//span[@role='gridcell' and @aria-labelledby='genfilename' and text()='{file_name}']")
+                (By.XPATH, f"//span[@role='gridcell' and @aria-labelledby='genfilename' and text()='{file_name}']")  
             )
         )
         driver.execute_script("arguments[0].click();", file_element)
@@ -105,13 +105,13 @@ def download_PAK_file(driver, file_name):
 # Function to transfer the downloaded PAK file to a target folder
 def transfer_PAK_file(file_name, target_path):
     """Move the downloaded file to a specific target folder."""
-    download_path = get_download_path()
-    source_file = os.path.join(download_path, file_name)
-    destination_file = os.path.join(target_path, file_name)
+    download_path = get_download_path()  # Source (Downloads)
+    source_file = os.path.join(download_path, file_name)  # Full source path
+    destination_file = os.path.join(target_path, file_name)  # Full target path
 
     try:
         if os.path.exists(source_file):
-            shutil.move(source_file, destination_file)
+            shutil.move(source_file, destination_file)  # Move file
             print(f"✅ File moved successfully to: {destination_file}")
             return True
         else:
@@ -159,18 +159,23 @@ for index, row in df.iterrows():
 
     elif action == "transfer pak file" and requirement == "Y" and input_value:
         print(f"Processing file transfer: {input_value}")
-        file_name, target_path = input_value.split(";")  # Assuming input format is "filename;targetpath"
-        file_name = file_name.strip()
-        target_path = target_path.strip()
+        
+        try:
+            file_name, target_path = input_value.split(";")  # Split filename & target path
+            file_name = file_name.strip()
+            target_path = target_path.strip()
 
-        if os.path.exists(target_path):
-            transfer_success = transfer_PAK_file(file_name, target_path)
-            if transfer_success:
-                print(f"✅ File '{file_name}' transferred successfully.")
+            if os.path.exists(target_path):
+                transfer_success = transfer_PAK_file(file_name, target_path)
+                if transfer_success:
+                    print(f"✅ File '{file_name}' transferred successfully.")
+                else:
+                    print(f"❌ Transfer failed for '{file_name}'.")
             else:
-                print(f"❌ Transfer failed for '{file_name}'.")
-        else:
-            print(f"❌ Target path '{target_path}' does not exist. Please check and create the folder.")
+                print(f"❌ Target path '{target_path}' does not exist. Please check and create the folder.")
+
+        except ValueError:
+            print("❌ Invalid input format. Expected format: 'filename;target_path'")
 
 input("Press Enter to close")
 print("All tasks completed successfully!")
