@@ -65,7 +65,7 @@ def download_PAK_file(driver, file_name):
         # **Step 1: Find and click the file to open preview**
         file_element = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located(
-                (By.XPATH, f"//span[@role='gridcell' and contains(text(), '{file_name}')]")
+                (By.XPATH, f"//span[@role='gridcell'] [@aria-labelledby='genfilename' and contains(text(), '{file_name}')]")
             )
         )
         driver.execute_script("arguments[0].click();", file_element)
@@ -92,7 +92,7 @@ def download_PAK_file(driver, file_name):
             if os.path.exists(download_file_path):
                 print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
                 return True
-            time.sleep(2)  # Wait before checking again
+            time.sleep(30)  # Wait before checking again
             timeout -= 2
 
         print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
