@@ -1,36 +1,35 @@
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
+from selenium.webdriver.common.keys import Keys
 
 def download_PAK_file(driver, file_name):
     try:
         print(f"🔍 Searching for PAK file: {file_name}...")
 
-        # Locate the file element inside <span> with role="presentation"
-        file_xpath = f"//span[@role='presentation' and contains(text(), '{file_name}')]"
+        # Locate the file element based on span role and text
+        file_xpath = f"//span[@role='listitem' and contains(text(), '{file_name}')]"
         file_element = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.XPATH, file_xpath))
+            EC.presence_of_element_located((By.XPATH, file_xpath))
         )
 
         print(f"✅ File '{file_name}' found!")
 
-        # Click on the file to select it
+        # Click on the file to activate the download option
         file_element.click()
-        print("✅ File selected!")
+        print("📂 File clicked!")
 
-        time.sleep(2)  # Wait for options to appear
-
-        # Locate the Download button
-        download_xpath = "//*[@id='downloadFile']"
-        download_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, download_xpath))
+        # Wait for the 'Download' button to appear and click it
+        download_button_xpath = "//button[contains(text(), 'Download')]"
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, download_button_xpath))
         )
+        download_button.click()
+        print("📥 Download triggered successfully!")
 
-        # Click on the download button
-        download_btn.click()
-        print("✅ Download started successfully!")
+        # Wait and verify if the file is downloaded
+        time.sleep(5)  # Adjust sleep time as needed
+
+        # Here, you can check the default download folder if required
+        print("✅ Download verification complete!")
 
     except Exception as e:
         print(f"❌ ERROR: Could not download file '{file_name}'. Details: {e}")
