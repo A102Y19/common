@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import sys  # To stop script on login failure
+import zipfile
+import logging
 
 # Load Excel file
 file_path = "C:/PAK/PAK_Standard_requirement.xlsx"
@@ -92,7 +94,7 @@ def download_PAK_file(driver, file_name):
             if os.path.exists(download_file_path):
                 print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
                 return download_file_path  # Returning the file path
-            time.sleep(1)
+            time.sleep(30)
             timeout -= 1
 
         print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
@@ -101,6 +103,8 @@ def download_PAK_file(driver, file_name):
     except Exception as e:
         print(f"❌ Error: Unable to download file '{file_name}' - {e}")
         return None
+
+
 
 # Function to transfer the downloaded PAK file to a target folder
 def transfer_PAK_file(source_file, target_path):
@@ -117,6 +121,78 @@ def transfer_PAK_file(source_file, target_path):
             return False
     except Exception as e:
         print(f"❌ Error moving file '{source_file}': {e}")
+        return False
+
+def access_executable_filepath(driver, url):
+    print(f"Opening Executable File Path: {url}")
+    driver.execute_script("window.open('');")
+    time.sleep(2)
+    driver.switch_to.window(driver.window_handles[-1])
+    driver.get(url)
+    print(f"Successfully opened Executable file path: {url}")
+    time.sleep(5)
+
+# Function to download Executable file in the same Executable File Path tab
+def download_executable_file(driver, file_name):
+    print(f"⬇️ Searching for executable: {file_name} to download...")
+
+    try:
+        # Find and click on the executable file element to initiate download
+        exec_element = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, f"//span[@role='gridcell' and text()='{file_name}']")
+            )
+        )
+        driver.execute_script("arguments[0].click();", exec_element)
+        print(f"✅ Executable '{file_name}' selected for download...")
+
+        # Wait for the download confirmation to load (implement appropriate wait as per the app)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]"))
+        )
+
+        # Click the actual download button
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[text()='{file_name}']//following::i[contains(@class, 'fa-download')][1]"))
+        )
+        driver.execute_script("arguments[0].click();", download_button)
+        print(f"✅ Download initiated for executable: '{file_name}'")
+
+        # Wait and confirm file is downloaded
+        download_path = get_download_path()
+        download_file_path = os.path.join(download_path, file_name)
+        timeout = 30
+
+        while timeout > 0:
+            if os.path.exists(download_file_path):
+                print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
+                return True
+            time.sleep(30)
+            timeout -= 1
+
+        print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
+        return False
+
+    except Exception as e:
+        print(f"❌ Error: Unable to download executable '{file_name}' - {e}")
+        return False
+
+def unzip_file(zip_path, extract_to):
+    """Unzips a ZIP file to the specified directory."""
+    if not os.path.exists(zip_path):
+        logging.error(f"❌ ZIP file '{zip_path}' does not exist.")
+        return False
+
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_to)
+            logging.info(f"✅ Successfully extracted '{zip_path}' to '{extract_to}'")
+            return True
+    except zipfile.BadZipFile:
+        logging.error(f"❌ Error: '{zip_path}' is not a valid ZIP file.")
+        return False
+    except Exception as e:
+        logging.error(f"❌ An error occurred while unzipping '{zip_path}': {e}")
         return False
 
 # Initialize Chrome WebDriver only once
@@ -158,6 +234,33 @@ for index, row in df.iterrows():
                 print(f"❌ Transfer failed to {input_value}.")
         else:
             print("❌ No file available to transfer.")
+
+    elif action == "access executable file path" and requirement == "Y" and input_value:
+        print(f"Processing Executable File Path: {input_value}")
+        access_executable_filepath(driver, input_value)
+        exec_tab_opened = True
+        print("Finished executing access_executable_filepath()")
+
+    elif action == "download executable file" and requirement == "Y" and input_value:
+        print(f"Processing Executable file download: {input_value}")
+        if exec_tab_opened:
+            # Ensure we are in the Executable File Path tab
+            driver.switch_to.window(driver.window_handles[-1])
+            download_executable_file(driver, input_value)
+            print("Finished executing download_executable_file()")
+        else:
+            print("Cannot download Executable file: Executable File Path tab is not open.")
+
+    elif action == "unzip file" and requirement == "Y" and input_value:
+        if downloaded_file_path:
+            unzip_success = unzip_file(downloaded_file_path, input_value)
+            if unzip_success:
+                logging.info(f"✅ File unzipped successfully to '{input_value}'.")
+            else:
+                logging.error("❌ Unzipping failed.")
+        else:
+            logging.error("❌ No downloaded file available to unzip.")
+
 
 input("Press Enter to close")
 print("All tasks completed successfully!")
