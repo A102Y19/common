@@ -12,11 +12,11 @@ from selenium.common.exceptions import TimeoutException
 from pywinauto import Application, findwindows
 from pywinauto.keyboard import send_keys
 
-if len(sys.argv) < 2:
-    print("Error: No password provided as an argument")
+# Get password from environment variable
+password = os.getenv("OMP_PASSWORD")
+if not password:
+    print("Error: Environment variable 'OMP_PASSWORD' not found!")
     sys.exit(1)
-password = sys.argv[1]
-
 
 # Define log file path (same as batch file)
 log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
@@ -31,7 +31,6 @@ logging.basicConfig(
     ]
 )
 
-
 # Configure logging (Suppress WebDriver logs)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -39,7 +38,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 edge_options = webdriver.EdgeOptions()
 edge_options.add_argument("--log-level=3")  # Suppress most logs
 edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])  # Remove console logs
-
 
 # Initialize WebDriver
 driver = None  
@@ -110,7 +108,6 @@ try:
     logging.info(f"RDP file found: {rdp_file}")
 
     # Step 7: Run the .rdp file
-    #subprocess.Popen(rdp_file, shell=True)
     time.sleep(10)  # Wait for the RDP window to open
 
     # Step 8: Handle Password Prompt if it Appears
@@ -153,4 +150,3 @@ try:
     if not omp_app:
         logging.error("OMP Plus application did not launch within the timeout!")
         exit(1)
-
