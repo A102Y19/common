@@ -18,7 +18,7 @@ if not password:
     print("Error: Environment variable 'OMP_PASSWORD' not found!")
     sys.exit(1)
 
-# Define log file path (same as batch file)
+# Define log file path
 log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 
 # Configure logging
@@ -26,76 +26,56 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(log_filename),  # Log to file
-        logging.StreamHandler()  # Log to console
+        logging.FileHandler(log_filename),
+        logging.StreamHandler()
     ]
 )
 
-# Configure logging (Suppress WebDriver logs)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-# Edge WebDriver options to suppress logs
+# Configure Edge WebDriver
 edge_options = webdriver.EdgeOptions()
-edge_options.add_argument("--log-level=3")  # Suppress most logs
-edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])  # Remove console logs
+edge_options.add_argument("--log-level=3")
+edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
 # Initialize WebDriver
-driver = None  
+driver = None
 
 try:
     logging.info("Starting Edge WebDriver...")
     driver = webdriver.Edge(options=edge_options)
+    driver.get("https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx")
 
-    # Step 1: Open the URL
-    url = "https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx"
-    logging.info(f"Opening URL: {url}")
-    driver.get(url)
-
-    # Step 2: Wait for Username & Password Fields
     wait = WebDriverWait(driver, 10)
 
     try:
-        logging.info("Finding username and password fields...")
         username_field = wait.until(EC.presence_of_element_located((By.ID, "DomainUserName")))
         password_field = wait.until(EC.presence_of_element_located((By.ID, "UserPass")))
 
-        logging.info("Entering credentials...")
         username_field.send_keys("NA\\gyellap1")
         password_field.send_keys(password)
     except TimeoutException:
         logging.error("Username or password field not found!")
-        exit(1)
+        sys.exit(1)
 
-    # Step 3: Click the Sign In Button
     try:
-        logging.info("Waiting for Sign In button...")
         sign_in_button = wait.until(EC.element_to_be_clickable((By.ID, "btnSignIn")))
-        logging.info("Clicking the Sign In button...")
         sign_in_button.click()
     except TimeoutException:
         logging.error("Sign In button not found!")
-        exit(1)
+        sys.exit(1)
 
-    # Step 4: Wait for Login Confirmation
     time.sleep(5)
-    logging.info("Login successful.")
 
-    # Step 5: Click on "OMP LAB INSTANCE"
     try:
-        logging.info("Searching for OMP LAB INSTANCE button...")
         instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP LAB INSTANCE')]")))
-        logging.info("Clicking OMP LAB INSTANCE button...")
         instance_button.click()
     except TimeoutException:
         logging.error("OMP LAB INSTANCE button not found!")
-        exit(1)
+        sys.exit(1)
 
-    # Step 6: Wait for the .rdp file to download
     time.sleep(5)
     download_path = os.path.join(os.path.expanduser("~"), "Downloads")
     rdp_file = None
 
-    # Find the latest downloaded .rdp file
     for file in os.listdir(download_path):
         if file.endswith(".rdp"):
             rdp_file = os.path.join(download_path, file)
@@ -103,51 +83,46 @@ try:
 
     if not rdp_file:
         logging.error("RDP file not found in downloads!")
-        exit(1)
+        sys.exit(1)
 
     logging.info(f"RDP file found: {rdp_file}")
+    time.sleep(10)
 
-    # Step 7: Run the .rdp file
-    time.sleep(10)  # Wait for the RDP window to open
-
-    # Step 8: Handle Password Prompt if it Appears
     try:
         app = Application().connect(title_re=".*Remote Desktop Connection.*", timeout=10)
         password_window = app.window(title_re=".*Remote Desktop Connection.*")
         time.sleep(20)
 
         if password_window.exists():
-            logging.info("Password prompt detected. Entering credentials...")
             password_window.Edit.set_text(password)
             password_window.OK.click()
             time.sleep(2)
     except Exception:
-        logging.info("No password prompt detected. Proceeding...")
-        time.sleep(10)  # Ensure it proceeds correctly
-        pyautogui.press("enter")  # Press Enter to continue
+        logging.info("No password prompt detected.")
+        pyautogui.press("enter")
         time.sleep(10)
 
-    # Step 9: Wait for OMP Plus Application to Launch
     logging.info("Waiting for OMP Plus application to launch...")
     omp_app = None
-    max_attempts = 5
-    interval = 5  # Seconds between each check
 
-    for attempt in range(max_attempts):
+    for attempt in range(5):
         try:
             windows = findwindows.find_windows(title_re=".*OMP Plus.*", backend='win32')
             if windows:
-                omp_app = Application().connect(handle=windows[0])  # Connect to the first found instance
+                omp_app = Application().connect(handle=windows[0])
                 logging.info("OMP Plus application detected.")
                 break
-            else:
-                logging.info(f"Attempt {attempt + 1}: OMP Plus is Not Running. Retrying...")
         except Exception as e:
             logging.info(f"Attempt {attempt + 1}: OMP Plus is Not Running - {e}")
-        
-        time.sleep(interval)
+
+        time.sleep(5)
 
     if not omp_app:
         logging.error("OMP Plus application did not launch within the timeout!")
-        exit(1)
+        sys.exit(1)
 
+except Exception as e:
+    logging.error(f"Unexpected error: {e}")
+finally:
+    if driver:
+        driver.quit()
