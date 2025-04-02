@@ -150,3 +150,4 @@ try:
     if not omp_app:
         logging.error("OMP Plus application did not launch within the timeout!")
         exit(1)
+
