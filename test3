@@ -12,10 +12,11 @@ from selenium.common.exceptions import TimeoutException
 from pywinauto import Application, findwindows
 from pywinauto.keyboard import send_keys
 
-if len(sys.argv) < 2:
-    print("Error: No password provided as an argument")
+# Get password from environment variable
+password = os.getenv("OMP_pass")
+if not password:
+    print("Error: Environment variable 'OMP_pass' not found!")
     sys.exit(1)
-password = sys.argv[1]
 
 
 # Define log file path (same as batch file)
@@ -111,4 +112,11 @@ try:
 
     # Step 7: Run the .rdp file
     subprocess.Popen(rdp_file, shell=True)
-    time.sleep(10)  # Wait for the RDP window to open
+    time.sleep(20)  # Wait for the RDP window to open
+finally:
+    # Terminate the RDP connection (uncomment to use)
+   # terminate_rdp_connection()
+
+    # Quit the WebDriver
+    if driver:
+        #driver.quit()
