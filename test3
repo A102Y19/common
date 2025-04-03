@@ -18,7 +18,6 @@ if not password:
     print("Error: Environment variable 'OMP_pass' not found!")
     sys.exit(1)
 
-
 # Define log file path (same as batch file)
 log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 
@@ -32,7 +31,6 @@ logging.basicConfig(
     ]
 )
 
-
 # Configure logging (Suppress WebDriver logs)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -40,7 +38,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 edge_options = webdriver.EdgeOptions()
 edge_options.add_argument("--log-level=3")  # Suppress most logs
 edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])  # Remove console logs
-
 
 # Initialize WebDriver
 driver = None  
@@ -86,7 +83,7 @@ try:
     # Step 5: Click on "OMP LAB INSTANCE"
     try:
         logging.info("Searching for OMP LAB INSTANCE button...")
-        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP LAB INSTANCE')]")))
+        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP LAB INSTANCE')]") ))
         logging.info("Clicking OMP LAB INSTANCE button...")
         instance_button.click()
     except TimeoutException:
@@ -112,7 +109,25 @@ try:
 
     # Step 7: Run the .rdp file
     subprocess.Popen(rdp_file, shell=True)
-    time.sleep(20)  # Wait for the RDP window to open
+    time.sleep(10)  # Wait for the RDP window to open
+
+    # Step 8: Handle Password Prompt
+    logging.info("Checking for password prompt...")
+
+    try:
+        send_keys(password)  # Type the password
+        time.sleep(2)
+        send_keys("{ENTER}")  # Press Enter
+        logging.info("Password entered, waiting for session...")
+        time.sleep(10)  # Wait for session to initialize
+        send_keys("{ENTER}")  # Press Enter again if needed
+        logging.info("Entered second ENTER, waiting for OMP to launch...")
+    except Exception as e:
+        logging.error(f"Error entering password: {e}")
+
+    # Step 9: Wait for OMP Plus Application to Launch
+    logging.info("Waiting for OMP Plus application to launch...")
+
 finally:
     # Terminate the RDP connection (uncomment to use)
    # terminate_rdp_connection()
