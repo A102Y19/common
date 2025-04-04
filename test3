@@ -108,8 +108,8 @@ try:
     logging.info(f"RDP file found: {rdp_file}")
 
     # Step 7: Run the .rdp file
-    subprocess.Popen(rdp_file, shell=True)
-    time.sleep(10)  # Wait for the RDP window to open
+    #subprocess.Popen(rdp_file, shell=True)
+    time.sleep(15)  # Wait for the RDP window to open
 
     # Step 8: Handle Password Prompt
     logging.info("Checking for password prompt...")
@@ -119,14 +119,133 @@ try:
         time.sleep(2)
         send_keys("{ENTER}")  # Press Enter
         logging.info("Password entered, waiting for session...")
-        time.sleep(10)  # Wait for session to initialize
+        time.sleep(40)  # Wait for session to initialize
         send_keys("{ENTER}")  # Press Enter again if needed
         logging.info("Entered second ENTER, waiting for OMP to launch...")
     except Exception as e:
         logging.error(f"Error entering password: {e}")
 
+
     # Step 9: Wait for OMP Plus Application to Launch
     logging.info("Waiting for OMP Plus application to launch...")
+    omp_app = None
+    max_attempts = 5
+    interval = 5  # Seconds between each check
+
+    for attempt in range(max_attempts):
+        try:
+            windows = findwindows.find_windows(title_re=".*OMP Plus.*", backend='win32')
+            if windows:
+                omp_app = Application().connect(handle=windows[0])  # Connect to the first found instance
+                logging.info("OMP Plus application detected.")
+                break
+            else:
+                logging.info(f"Attempt {attempt + 1}: OMP Plus is Not Running. Retrying...")
+        except Exception as e:
+            logging.info(f"Attempt {attempt + 1}: OMP Plus is Not Running - {e}")
+        
+        time.sleep(10)
+
+    if not omp_app:
+        logging.error("OMP Plus application did not launch within the timeout!")
+        exit(1)
+
+    # Step 10: Interact with OMP Plus
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)  # Short delay to allow window focus
+
+        # Send commands to interact with the application
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(1)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(1)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}") # Step 2: Nine Right
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}") # Step 5: Two Enter
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing Base solution Build.")
+        time.sleep(60)
+
+    except Exception as e:
+        logging.error(f"Error during interaction with OMP Plus: {e}")
+
+    # Additional Step: Interact with OMP Lock Manager
+    time.sleep(60)  # Let the OMP Lock Manager stabilize
+    try:
+        logging.info("Connecting to OMP Lock Manager...")
+        app = Application(backend="uia").connect(title_re="OMP Lock Manager.*")
+        window = app.window(title_re="OMP Lock Manager.*")
+        window.set_focus()
+        time.sleep(5)
+
+        logging.info("Performing key sequence...")
+        send_keys("{TAB}")     # Step 1: One Tab
+        time.sleep(1)
+        send_keys("{RIGHT 9}") # Step 2: Nine Right
+        time.sleep(1)
+        send_keys("%")         # Step 3: Alt key
+        time.sleep(1)
+        send_keys("{TAB 2}")   # Step 4: Two Tab
+        time.sleep(1)
+        send_keys("{ENTER 2}") # Step 5: Two Enter
+        time.sleep(1)
+        send_keys("{DOWN 2}")  # Step 6: Two Down
+        time.sleep(1)
+        send_keys("{ENTER}")   # Step 7: One Enter
+        time.sleep(1)
+        send_keys("No")        # Step 8: Type 'No'
+        time.sleep(1)
+        send_keys("{ENTER}")   # Step 9: One Enter
+        time.sleep(1)
+        send_keys("^a")        # Step 10: Ctrl + A
+        time.sleep(1)
+        send_keys("{DELETE}")  # Step 11: Delete
+        time.sleep(1)
+
+        logging.info("Key sequence executed successfully!")
+        
+        # Closing the OMP Lock Manager
+        logging.info("Closing OMP Lock Manager...")
+        window.set_focus()
+        window.type_keys('%F')  # Alt + F to open File menu
+        time.sleep(1)
+        send_keys("x")  # Sending "x" to close the application
+        time.sleep(1)
+        logging.info("OMP Lock Manager closed successfully.")
+
+    except Exception as e:
+        logging.error(f"Error occurred during OMP Lock Manager interaction: {e}")
+
+    # Step 10: Close OMP Plus
+    try:
+        omp_window.set_focus()
+        omp_window.type_keys('%F')  # Open File menu
+        time.sleep(1)
+
+        logging.info("Sending x to close OMP Plus...")
+        omp_window.type_keys('x')    # Close command
+        time.sleep(1)
+        logging.info("OMP Plus closed successfully.")
+
+    except Exception as e:
+        logging.error(f"Error occurred while closing OMP Plus: {e}")
 
 finally:
     # Terminate the RDP connection (uncomment to use)
@@ -134,4 +253,5 @@ finally:
 
     # Quit the WebDriver
     if driver:
-        #driver.quit()
+        driver.quit()
+
