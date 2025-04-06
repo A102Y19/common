@@ -143,11 +143,80 @@ def base_solution_build(omp_app):
         logging.info("Sending ENTER...")
         send_keys("{ENTER}")
         logging.info("Initiated Installing Base solution Build.")
-        time.sleep(60)
+        time.sleep(30)
 
     except Exception as e:
         logging.error(f"Error during Base Solution Build: {e}")
 
+def industry_solution_build(omp_app):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(1)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(1)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 3}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing Industry solution Build.")
+        time.sleep(30)
+
+    except Exception as e:
+        logging.error(f"Error during industry Solution Build: {e}")
+
+def proejct_solution_build(omp_app):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(1)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(1)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 4}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing project solution Build.")
+        time.sleep(30)
+
+    except Exception as e:
+        logging.error(f"Error during project Solution Build: {e}")
 
 def main_launcher():
     excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
@@ -164,11 +233,18 @@ def main_launcher():
         requirement = str(row.iloc[1]).strip().upper()
 
         if requirement == "Y":
-            if action == "launch omp":
+            if "launch omp" in action:
                 omp_app = launching_OMP()
-            elif action == "base build":
+            elif "base build" in action:
                 if omp_app:
                     base_solution_build(omp_app)
+            elif "project build" in action:
+                if omp_app:
+                    proejct_solution_build(omp_app)
+            elif "industry build" in action:
+                if omp_app:
+                    industry_solution_build(omp_app)
+
                 else:
                     print("OMP not launched yet, skipping base build.")
             else:
