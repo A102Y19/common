@@ -1,0 +1,5 @@
+C:\pak\test1.py:193: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  action = str(row[0]).strip().lower()
+C:\pak\test1.py:194: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  requirement = str(row[1]).strip().upper()
+Unknown action 'launching omp', skipping...
