@@ -22,7 +22,6 @@ if not password:
 # Define log file path
 log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 
-
 def launching_OMP():
     logging.basicConfig(
         level=logging.INFO,
@@ -132,53 +131,49 @@ def launching_OMP():
             logging.error("OMP Plus application did not launch within the timeout!")
             exit(1)
 
-        try:
-            omp_window = omp_app.top_window()
-            omp_window.set_focus()
-            time.sleep(1)
+        return omp_app
 
-            logging.info("Sending Alt + U...")
-            omp_window.type_keys('%u')
-            time.sleep(1)
-            logging.info("Sending C...")
-            omp_window.type_keys('C')
-            time.sleep(1)
-            logging.info("Sending U...")
-            omp_window.type_keys('U')
-            time.sleep(2)
-            logging.info("Sending LEFT...")
-            send_keys("{LEFT}")
-            time.sleep(2)
-            logging.info("Sending DOWN...")
-            send_keys("{DOWN 2}")
-            time.sleep(2)
-            logging.info("Sending ENTER...")
-            send_keys("{ENTER}")
-            time.sleep(2)
-            logging.info("Sending DOWN...")
-            send_keys("{DOWN 2}")
-            time.sleep(2)
-            logging.info("Sending ENTER...")
-            send_keys("{ENTER}")
-            logging.info("Initiated Installing Base solution Build.")
-            time.sleep(60)
-        except Exception as e:
-            logging.error(f"Error during interaction with OMP Plus: {e}")
-
-        try:
-            omp_window.set_focus()
-            omp_window.type_keys('%F')
-            time.sleep(1)
-            logging.info("Sending x to close OMP Plus...")
-            omp_window.type_keys('x')
-            time.sleep(1)
-            logging.info("OMP Plus closed successfully.")
-        except Exception as e:
-            logging.error(f"Error occurred while closing OMP Plus: {e}")
-
-    finally:
+    except Exception as e:
+        logging.error(f"Unhandled exception in launching_OMP: {e}")
         if driver:
             driver.quit()
+        return None
+
+
+def base_solution_build(omp_app):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(1)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(1)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN again...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER to initiate base build...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing Base solution Build.")
+        time.sleep(60)
+
+    except Exception as e:
+        logging.error(f"Error in base_solution_build: {e}")
 
 
 def main_launcher():
@@ -189,15 +184,25 @@ def main_launcher():
         print(f"Failed to load Excel: {e}")
         return
 
+    omp_app = None
+
     for index, row in df.iterrows():
-        action = str(row[0]).strip().lower()
-        requirement = str(row[1]).strip().upper()
+        action = str(row.iloc[0]).strip().lower()
+        requirement = str(row.iloc[1]).strip().upper()
 
         if requirement == "Y":
             if "launch omp" in action:
-                launching_OMP()
+                omp_app = launching_OMP()
+            elif "base build" in action:
+                if omp_app:
+                    base_solution_build(omp_app)
+                else:
+                    print("OMP not launched. Skipping base build.")
             else:
                 print(f"Unknown action '{action}', skipping...")
+
+        elif requirement == "N":
+            print(f"Skipping '{action}' as Requirement is 'N'")
 
 
 if __name__ == "__main__":
