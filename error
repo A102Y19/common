@@ -1,3 +1,7 @@
+from pywinauto import Desktop
+import time
+import sys
+
 def check_schema_pass_popup():
     print("Waiting for schema execution popup (no timeout)...")
 
@@ -5,29 +9,42 @@ def check_schema_pass_popup():
         try:
             windows = Desktop(backend="uia").windows()
             for w in windows:
-                if "Information" in w.window_text():
-                    dlg = w
-                    dlg.set_focus()
-                    message = dlg.child_window(control_type="Text").window_text()
-                    print("Popup Message:", message)
+                title = w.window_text()
 
-                    # Click OK button
+                if "Information" in title:
                     try:
-                        dlg.child_window(title="OK", control_type="Button").click()
-                    except:
-                        print("OK button click failed.")
+                        dlg = w.wrapper_object()
+                        dlg.set_focus()
 
-                    # Check result based on message
-                    if "successfully executed" in message.lower():
-                        print("Schema executed successfully.")
-                        return True
-                    elif "encountered an error" in message.lower():
-                        print("Schema execution failed.")
-                        sys.exit("Terminating due to error in schema execution.")
-                    else:
-                        print("Unrecognized popup message.")
-                        return False
+                        # Log popup title
+                        print("Detected Popup Title:", title)
+
+                        # Try reading message text inside popup
+                        text_elems = dlg.descendants(control_type="Text")
+                        message = " ".join([t.window_text() for t in text_elems])
+                        print("Popup Message:", message)
+
+                        # Close popup
+                        try:
+                            dlg.child_window(title="OK", control_type="Button").click_input()
+                            print("Clicked OK on popup.")
+                        except:
+                            print("Could not click OK.")
+
+                        # Match message content
+                        if "successfully executed" in message.lower():
+                            print("✅ Schema executed successfully.")
+                            return True
+                        elif "encountered an error" in message.lower():
+                            print("❌ Schema execution failed.")
+                            sys.exit("Terminating due to error in schema execution.")
+                        else:
+                            print("❓ Unrecognized popup message.")
+                            return False
+                    except Exception as e:
+                        print("Popup found, but error handling it:", e)
+
         except Exception as e:
-            pass
+            print("Error accessing windows:", e)
 
         time.sleep(2)
