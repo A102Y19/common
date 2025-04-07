@@ -134,6 +134,8 @@ def stop_dispatcher(omp_app):
         logging.info("Sending ENTER...")
         send_keys("{ENTER}")
         time.sleep(2)
+    except Exception as e:
+        logging.error(f"Error in stop dispatcher: {e}")
 
 
 def base_solution_build(omp_app):
@@ -377,11 +379,15 @@ def main_launcher():
         action = str(row.iloc[0]).strip().lower()
         requirement = str(row.iloc[1]).strip().upper()
 
-        #print(f"Action: '{action}', Requirement: '{requirement}'")
+        print(f"Action: '{action}', Requirement: '{requirement}'")
 
         if requirement == "Y":
             if "launch omp" in action:
                 omp_app = launching_OMP()
+            elif "stop dispatcher" in action:
+                print("Executing stop dispatcher")
+                if omp_app:
+                    stop_dispatcher(omp_app)  
             elif "base build" in action:
                 if omp_app:
                     base_solution_build(omp_app)
@@ -395,8 +401,7 @@ def main_launcher():
                 select_build_option()
             elif "schema pass" in action:
                 schema_pass()
-            elif "stop dispatcher" in action:
-                stop_dispatcher()       
+                 
 
                 
             else:
