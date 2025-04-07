@@ -1,61 +1,33 @@
-def stop_dispatcher(omp_app, dispatcher_path):
-    try:
-        omp_window = omp_app.top_window()
-        omp_window.set_focus()
-        time.sleep(1)
+def check_schema_pass_popup():
+    print("Waiting for schema execution popup (no timeout)...")
 
-        logging.info("Sending Alt + U...")
-        omp_window.type_keys('%u')
-        time.sleep(1)
-        logging.info("Sending W...")
-        omp_window.type_keys('W')
-        time.sleep(1)
-        logging.info("Sending C...")
-        omp_window.type_keys('C')
-        time.sleep(1)
-        logging.info("Sending C...")
-        omp_window.type_keys('C')
-        time.sleep(1)
-        logging.info("Sending ENTER...")
-        send_keys("{ENTER}")
-        time.sleep(10)
+    while True:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for w in windows:
+                if "Information" in w.window_text():
+                    dlg = w
+                    dlg.set_focus()
+                    message = dlg.child_window(control_type="Text").window_text()
+                    print("Popup Message:", message)
 
-        # Check if CMD opened
-        logging.info("Checking for CMD window...")
-        cmd_found = False
-        for _ in range(5):
-            try:
-                windows = findwindows.find_windows(title_re=".*Command Prompt.*", backend='win32')
-                if windows:
-                    logging.info("Command Prompt window found.")
-                    cmd_found = True
-                    break
-            except Exception:
-                pass
-            time.sleep(5)
+                    # Click OK button
+                    try:
+                        dlg.child_window(title="OK", control_type="Button").click()
+                    except:
+                        print("OK button click failed.")
 
-        if not cmd_found:
-            logging.error("Command Prompt window not found after stop dispatcher.")
-            return
+                    # Check result based on message
+                    if "successfully executed" in message.lower():
+                        print("Schema executed successfully.")
+                        return True
+                    elif "encountered an error" in message.lower():
+                        print("Schema execution failed.")
+                        sys.exit("Terminating due to error in schema execution.")
+                    else:
+                        print("Unrecognized popup message.")
+                        return False
+        except Exception as e:
+            pass
 
-        # Send pushd <dispatcher_path> and execute stop command
-        logging.info(f"Sending pushd command to path: {dispatcher_path}")
-        send_keys(f'pushd {dispatcher_path}')
-        send_keys('{ENTER}')
         time.sleep(2)
-        logging.info("Sending stop command...")
-        send_keys('DispatcherManagementAction.cmd stop /all')
-        send_keys('{ENTER}')
-        logging.info("Dispatcher stop command sent.")
-
-    except Exception as e:
-        logging.error(f"Error in stop_dispatcher: {e}")
-
-
-
-
-elif "stop dispatcher" in action:
-    print("Executing stop dispatcher")
-    if omp_app:
-        dispatcher_path = str(row.iloc[2]).strip()
-        stop_dispatcher(omp_app, dispatcher_path)
