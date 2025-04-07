@@ -218,6 +218,17 @@ def proejct_solution_build(omp_app):
     except Exception as e:
         logging.error(f"Error during project Solution Build: {e}")
 
+def select_build_option():
+    try:
+        time.sleep(10)
+        logging.info("sending build option")
+        send_keys("1")
+        time.sleep(1)
+        send_keys("{ENTER}")
+        logging.info("Build option 1 selected successfully")
+    except Exception as e:
+        logging.error(f"Error while selecting build option: {e}")
+
 def main_launcher():
     excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
     try:
@@ -244,9 +255,10 @@ def main_launcher():
             elif "industry build" in action:
                 if omp_app:
                     industry_solution_build(omp_app)
+            elif "select build" in action:
+                select_build_option()
 
-                else:
-                    print("OMP not launched yet, skipping base build.")
+                
             else:
                 print(f"Unknown action '{action}', skipping...")
         else:
