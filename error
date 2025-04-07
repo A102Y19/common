@@ -1,5 +1,31 @@
-C:\pak\test1.py:193: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-  action = str(row[0]).strip().lower()
-C:\pak\test1.py:194: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-  requirement = str(row[1]).strip().upper()
-Unknown action 'launching omp', skipping...
+def select_build_option():
+    try:
+        time.sleep(10)
+        logging.info("Sending build option...")
+        send_keys("1")
+        time.sleep(1)
+        send_keys("{ENTER}")
+        logging.info("Build option 1 selected successfully.")
+
+        logging.info("Waiting for OMP Data Change Manager to launch...")
+        time.sleep(30)
+
+        # Check if 'OMP Data Change Manager' window opened
+        window_found = False
+        for _ in range(3):  # Retry a few times
+            try:
+                windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
+                if windows:
+                    logging.info("OMP Data Change Manager window detected.")
+                    window_found = True
+                    break
+            except Exception:
+                logging.info("Waiting for window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("OMP Data Change Manager did not open. Exiting...")
+            sys.exit(1)
+
+    except Exception as e:
+        logging.error(f"Error while selecting build option: {e}")
