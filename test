@@ -276,7 +276,7 @@ def select_build_option():
     try:
         time.sleep(10)
         logging.info("Sending build option...")
-        send_keys("1")
+        send_keys("2")
         time.sleep(1)
         send_keys("{ENTER}")
         logging.info("Build option 1 selected successfully.")
@@ -305,17 +305,28 @@ def select_build_option():
     except Exception as e:
         logging.error(f"Error while selecting build option: {e}")
 
-def scehma_pass():
-    load_dotenv("C:/PAK/Schema_pass.env")
-
-    schema_password = [
-        os.getenv("OMP_JNJ_MD_ATOM_LAB_OPR"),
-        os.getenv("OMP_JNJ_MD_ATOM_LAB_SOP"),
-        os.getenv("OMP_JNJ_MD_ATOM_LAB_FCT"),
-        os.getenv("OMP_JNJ_MD_ATOM_LAB_UTL")
+def schema_pass():
+    load_dotenv("C:/PAK/.env")
+    
+    schema_keys = [
+        "OMP_JNJ_MD_ATOM_LAB_OPR",
+        "OMP_JNJ_MD_ATOM_LAB_SOP",
+        "OMP_JNJ_MD_ATOM_LAB_FCT",
+        "OMP_JNJ_MD_ATOM_LAB_UTL"
     ]
 
-    logging.info("All Schema passwords Entered")
+    for key in schema_keys:
+        schema_password = os.getenv(key)
+        if not schema_password:
+            print(f"password not found for {key}")
+            continue
+
+        time.sleep(3)
+        pyautogui.write(schema_password)
+        time.sleep(2)
+        pyautogui.press("enter")
+        print(f"Enterd password for {key}")
+
 
 def main_launcher():
     excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
@@ -330,6 +341,8 @@ def main_launcher():
     for index, row in df.iterrows():
         action = str(row.iloc[0]).strip().lower()
         requirement = str(row.iloc[1]).strip().upper()
+
+        #print(f"Action: '{action}', Requirement: '{requirement}'")
 
         if requirement == "Y":
             if "launch omp" in action:
@@ -346,7 +359,7 @@ def main_launcher():
             elif "select build" in action:
                 select_build_option()
             elif "schema pass" in action:
-                scehma_pass()              
+                schema_pass()              
 
                 
             else:
