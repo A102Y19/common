@@ -1,1 +1,57 @@
+from pywinauto import Desktop
+import time
 
+def wait_for_schema_popup():
+    print("⌛ Waiting for schema execution popup...")
+
+    # Step 1: Get existing popup window handles before schema popup
+    existing_handles = set()
+    for win in Desktop(backend="uia").windows():
+        existing_handles.add(win.handle)
+
+    while True:
+        try:
+            # Step 2: Get all current windows
+            for w in Desktop(backend="uia").windows():
+                try:
+                    # Step 3: Only consider NEW popups (not in original set)
+                    if w.handle in existing_handles:
+                        continue
+
+                    title = w.window_text().strip()
+                    if title != "Information":
+                        continue
+
+                    # Step 4: Get inner text
+                    texts = [ctrl.window_text().strip() for ctrl in w.descendants(control_type="Text")]
+                    joined_text = " ".join(texts).lower()
+
+                    if "successfully executed all standard actions" in joined_text:
+                        print("✅ Schema executed successfully.")
+                        try:
+                            w.child_window(title="OK", control_type="Button").click_input()
+                        except:
+                            print("⚠️ OK button not found.")
+                        return True
+
+                    elif "encountered an error" in joined_text:
+                        print("❌ Schema execution failed.")
+                        try:
+                            w.child_window(title="OK", control_type="Button").click_input()
+                        except:
+                            print("⚠️ OK button not found.")
+                        return False
+
+                    else:
+                        print("⚠️ Unclear new info popup:")
+                        print(joined_text)
+                        return None
+
+                except Exception:
+                    continue
+
+            time.sleep(2)
+
+        except Exception as e:
+            print("Error:", e)
+            break
