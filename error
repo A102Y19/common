@@ -1,6 +1,3 @@
-from pywinauto import Desktop
-import time
-
 def wait_for_schema_popup():
     print("🔍 Waiting for schema execution popup...")
 
@@ -45,13 +42,12 @@ def wait_for_schema_popup():
 
         time.sleep(2)
 
+   wait_for_schema_popup()
+                result = wait_for_schema_popup()
 
-
-result = wait_for_schema_popup()
-
-if result == True:
-    print("Schema execution SUCCESS ✅")
-elif result == False:
-    print("Schema execution FAILED ❌")
-else:
-    print("Schema execution STATUS UNKNOWN ⚠️")
+                if result == True:
+                    print("Schema execution SUCCESS ✅")
+                elif result == False:
+                    print("Schema execution FAILED ❌")
+                else:
+                    print("Schema execution STATUS UNKNOWN ⚠️")
