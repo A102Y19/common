@@ -1,1 +1,59 @@
+def wait_for_schema_popup():
+    print("🔍 Waiting for schema execution popup...")
 
+    while True:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for w in windows:
+                try:
+                    all_texts = []
+                    for ctrl in w.descendants(control_type="Text"):
+                        txt = ctrl.window_text()
+                        if txt.strip():
+                            all_texts.append(txt.strip())
+
+                    combined_text = " ".join(all_texts).lower()
+
+                    # Check for real schema popup content only
+                    if "update installer" in combined_text:
+                        if "successfully executed" in combined_text:
+                            print(f"\n✅ Popup detected: {w.window_text()}")
+                            print("📋 Popup Text:", combined_text)
+                            try:
+                                w.child_window(title="OK", control_type="Button").click_input()
+                                print("✅ Clicked OK button.")
+                            except:
+                                print("⚠️ OK button not found.")
+                            print("✅ Schema executed successfully.")
+                            return True
+
+                        elif "encountered an error" in combined_text or "error and will exit" in combined_text:
+                            print(f"\n❌ Error Popup detected: {w.window_text()}")
+                            print("📋 Popup Text:", combined_text)
+                            try:
+                                w.child_window(title="OK", control_type="Button").click_input()
+                                print("✅ Clicked OK button.")
+                            except:
+                                print("⚠️ OK button not found.")
+                            print("❌ Schema execution failed.")
+                            return False
+                        
+                        else:
+                            # Detected popup but couldn't determine result
+                            print(f"\n❓ Unknown schema popup detected: {w.window_text()}")
+                            print("📋 Popup Text:", combined_text)
+                            try:
+                                w.child_window(title="OK", control_type="Button").click_input()
+                                print("✅ Clicked OK button.")
+                            except:
+                                print("⚠️ OK button not found.")
+                            print("Schema execution STATUS UNKNOWN ⚠️")
+                            return None
+
+                except Exception:
+                    continue
+
+        except Exception as e:
+            print("Error reading windows:", e)
+
+        time.sleep(2)
