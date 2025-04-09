@@ -182,6 +182,8 @@ def stop_dispatcher(omp_app, dispatcher_path):
 
         else:
             print("Dispatcher stop failed, Terminating script")
+            logging.error("Dispatcer stop failed!")
+            sys.exit(1)
             
     except Exception as e:
         logging.error(f"Error in stop_dispatcher: {e}")
@@ -467,15 +469,7 @@ def wait_for_schema_popup():
 
         time.sleep(2)
 
-        result = wait_for_schema_popup()
-
-        if result == True:
-            print("Schema execution SUCCESS ✅")
-        elif result == False:
-            print("Schema execution FAILED ❌")
-        else:
-            print("Schema execution STATUS UNKNOWN ⚠️")
-
+        
 def main_launcher():
     excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
     try:
@@ -513,7 +507,16 @@ def main_launcher():
                 select_build_option()
             elif "schema pass" in action:
                 schema_pass()
-                check_schema_pass_popup()
+                wait_for_schema_popup()
+                result = wait_for_schema_popup()
+
+                if result == True:
+                    print("Schema execution SUCCESS ✅")
+                elif result == False:
+                    print("Schema execution FAILED ❌")
+                else:
+                    print("Schema execution STATUS UNKNOWN ⚠️")
+
             
                  
 
