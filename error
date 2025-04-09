@@ -1,3 +1,6 @@
+from pywinauto import Desktop
+import time
+
 def wait_for_schema_popup():
     print("🔍 Waiting for schema execution popup...")
 
@@ -6,48 +9,41 @@ def wait_for_schema_popup():
             windows = Desktop(backend="uia").windows()
             for w in windows:
                 try:
-                    all_texts = []
-                    for ctrl in w.descendants(control_type="Text"):
-                        txt = ctrl.window_text()
-                        if txt.strip():
-                            all_texts.append(txt.strip())
-
-                    combined_text = " ".join(all_texts).lower()
-
-                    if "update installer" in combined_text or "successfully executed" in combined_text or "encountered an error" in combined_text:
-                        print(f"\n✅ Popup detected in window: {w.window_text()}")
-                        print("📋 Popup Text:", combined_text)
-
+                    # Check window title
+                    window_text = w.window_text().lower()
+                    if any(kw in window_text for kw in ["successfully executed", "update installer", "encountered an error"]):
+                        print(f"\n✅ Popup detected (window title): {w.window_text()}")
                         try:
                             w.child_window(title="OK", control_type="Button").click_input()
                             print("✅ Clicked OK button.")
                         except:
                             print("⚠️ OK button not found.")
+                        return "success" if "successfully executed" in window_text else "error"
 
-                        if "successfully executed" in combined_text:
-                            print("✅ Schema executed successfully.")
-                            return True
-                        elif "encountered an error" in combined_text:
-                            print("❌ Schema execution failed.")
-                            return False
-                        else:
-                            print("❓ Unknown result.")
-                            return None
+                    # Check inner texts from any control
+                    all_texts = []
+                    for ctrl in w.descendants():
+                        try:
+                            txt = ctrl.window_text().strip().lower()
+                            if txt:
+                                all_texts.append(txt)
+                        except:
+                            continue
+
+                    combined_text = " ".join(all_texts)
+                    if any(kw in combined_text for kw in ["successfully executed", "update installer", "encountered an error"]):
+                        print(f"\n✅ Popup detected (content): {combined_text}")
+                        try:
+                            w.child_window(title="OK", control_type="Button").click_input()
+                            print("✅ Clicked OK button.")
+                        except:
+                            print("⚠️ OK button not found.")
+                        return "success" if "successfully executed" in combined_text else "error"
 
                 except:
                     continue
 
         except Exception as e:
-            print("Error reading windows:", e)
+            print("Error while scanning windows:", e)
 
         time.sleep(2)
-
-   wait_for_schema_popup()
-                result = wait_for_schema_popup()
-
-                if result == True:
-                    print("Schema execution SUCCESS ✅")
-                elif result == False:
-                    print("Schema execution FAILED ❌")
-                else:
-                    print("Schema execution STATUS UNKNOWN ⚠️")
