@@ -1,36 +1,34 @@
-def validate_projectrelease(men_file_path, folder_name):
+def validate_projectrelease(input_value):
     try:
+        men_file_path, folder_name = [x.strip() for x in input_value.split(",", 1)]
+
         if not os.path.exists(men_file_path):
-            print(f"❌ MEN file not found at: {men_file_path}")
-            return False
+            print(f"❌ .men file not found: {men_file_path}")
+            return
 
         with open(men_file_path, 'r') as file:
             lines = file.readlines()
 
         updated = False
-        with open(men_file_path, 'w') as file:
-            for line in lines:
-                if line.strip().startswith("OM_PROJECTRELEASE="):
-                    new_line = f"OM_PROJECTRELEASE={folder_name}\n"
-                    file.write(new_line)
-                    updated = True
-                    print(f"✅ Updated OM_PROJECTRELEASE line: {new_line.strip()}")
-                else:
-                    file.write(line)
+        for i, line in enumerate(lines):
+            if line.startswith("OM_PROJECTRELEASE="):
+                lines[i] = f"OM_PROJECTRELEASE={folder_name}\n"
+                updated = True
+                break
 
-        if not updated:
-            print("⚠️ OM_PROJECTRELEASE line not found in the file.")
-            return False
+        if updated:
+            with open(men_file_path, 'w') as file:
+                file.writelines(lines)
+            print(f"✅ OM_PROJECTRELEASE updated to '{folder_name}' in: {men_file_path}")
+        else:
+            print(f"⚠️ OM_PROJECTRELEASE line not found in {men_file_path}")
 
-        return True
-
+    except ValueError:
+        print(f"❌ Invalid input format: '{input_value}'")
+        print("   ➡️ Format should be: 'C:\\Path\\file.men, FolderName'")
     except Exception as e:
-        print(f"❌ Error while updating .men file: {e}")
-        return False
+        print(f"❌ Error updating .men file: {e}")
 
 
-    elif action == "validate_projectrelease" and requirement == "Y" and input_value:
-    if not folder_created_name:
-        print("❌ No folder name available from create_folder step.")
-    else:
-        validate_projectrelease(input_value, folder_created_name)
+elif action == "validate_projectrelease" and requirement == "y" and input_value:
+    validate_projectrelease(input_value)
