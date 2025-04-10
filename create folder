@@ -1,24 +1,33 @@
-# Function to create a folder at given path
-def create_folder(input_value):
+def validate_projectrelease(input_value, folder_name):
     try:
-        base_path, folder_name = [x.strip() for x in input_value.split(",", 1)]
-        full_path = os.path.join(base_path, folder_name)
+        men_file_path = input_value.strip()
 
-        if not os.path.exists(full_path):
-            os.makedirs(full_path)
-            print(f"✅ Folder created: {full_path}")
-        else:
-            print(f"📁 Folder already exists: {full_path}")
+        if not os.path.exists(men_file_path):
+            print(f"❌ .men file not found at: {men_file_path}")
+            return
 
-    except ValueError:
-        print(f"❌ Invalid input format for folder creation: '{input_value}'")
-        print("   ➡️ Format should be: 'C:\\Path, FolderName'")
+        with open(men_file_path, "r") as file:
+            lines = file.readlines()
+
+        updated_lines = []
+        found = False
+
+        for line in lines:
+            if line.strip().startswith("OM_PROJECTRELEASE="):
+                updated_line = f"OM_PROJECTRELEASE={folder_name}\n"
+                updated_lines.append(updated_line)
+                found = True
+            else:
+                updated_lines.append(line)
+
+        if not found:
+            print("⚠️ OM_PROJECTRELEASE= line not found in .men file.")
+            return
+
+        with open(men_file_path, "w") as file:
+            file.writelines(updated_lines)
+
+        print(f"✅ .men file updated successfully with OM_PROJECTRELEASE={folder_name}")
+
     except Exception as e:
-        print(f"❌ Error creating folder: {e}")
-
-
-
-
-
-        elif action == "create folder" and requirement == "Y" and input_value:
-        create_folder(input_value)
+        print(f"❌ Error updating .men file: {e}")
