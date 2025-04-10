@@ -1,0 +1,24 @@
+# Function to create a folder at given path
+def create_folder(input_value):
+    try:
+        base_path, folder_name = [x.strip() for x in input_value.split(",", 1)]
+        full_path = os.path.join(base_path, folder_name)
+
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+            print(f"✅ Folder created: {full_path}")
+        else:
+            print(f"📁 Folder already exists: {full_path}")
+
+    except ValueError:
+        print(f"❌ Invalid input format for folder creation: '{input_value}'")
+        print("   ➡️ Format should be: 'C:\\Path, FolderName'")
+    except Exception as e:
+        print(f"❌ Error creating folder: {e}")
+
+
+
+
+
+        elif action == "create folder" and requirement == "Y" and input_value:
+        create_folder(input_value)
