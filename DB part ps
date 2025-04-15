@@ -1,41 +1,18 @@
 # === CONFIGURATION ===
-$psexecPath   = "C:\Tools\PsExec\PsExec.exe"  # Path to PsExec.exe
-$remoteServer = "RemoteMachineNameOrIP"
-$remoteUser   = "remote_username"
-$remotePass   = "remote_password"
+$psexecPath    = "C:\Tools\PsExec\PsExec.exe"
+$remoteServer  = "AWSDMKNVAW0001"
+$remoteUser    = "remote_username"
+$remotePass    = "remote_password"
 
-# SQLPlus login
-$dbUser       = "db_username"
-$dbPass       = "db_password"
-$ldapAlias    = "LDAP_ALIAS"
+# Path to your shared script or SQL file accessible from the remote server
+$nasScriptPath = "\\NAS-SERVER\scripts\run_log_switch.sql"
 
-# Remote .sql script path (on remote machine)
-$remoteSqlPath = "C:\temp\run_log_switch.sql"
+# CMD to execute remotely (from shared path)
+$remoteCmd = "cmd.exe /c sqlplus /nolog @$nasScriptPath"
 
-# 1. PREPARE SQL SCRIPT LOCALLY
-$sqlContent = @"
-connect $dbUser/$dbPass@$ldapAlias
-alter system switch logfile;
-exit
-"@
-# Write to local file (same content needs to go to remote)
-$localSqlFile = "C:\temp\run_log_switch.sql"
-if (!(Test-Path "C:\temp")) { New-Item -Path "C:\temp" -ItemType Directory }
-$sqlContent | Out-File -FilePath $localSqlFile -Encoding ASCII -Force
+# Full PsExec command
+$fullCmd = "`"$psexecPath`" \\$remoteServer -u $remoteUser -p $remotePass $remoteCmd"
 
-# 2. COPY FILE TO REMOTE MACHINE
-# Requires admin share access to remote C$ or use file share
-$remoteSharePath = "\\$remoteServer\C$\temp"
-if (!(Test-Path $remoteSharePath)) {
-    New-Item -Path $remoteSharePath -ItemType Directory -Force | Out-Null
-}
-Copy-Item -Path $localSqlFile -Destination $remoteSharePath -Force
-
-# 3. RUN SQLPLUS USING PsExec
-$commandToRun = "cmd.exe /c sqlplus /nolog @$remoteSqlPath"
-
-$fullCmd = "`"$psexecPath`" \\$remoteServer -u $remoteUser -p $remotePass $commandToRun"
-
-# 4. EXECUTE
-Write-Host "Executing on remote..." -ForegroundColor Cyan
+# === EXECUTE ===
+Write-Host "Executing shared script on remote server..." -ForegroundColor Cyan
 Invoke-Expression $fullCmd
