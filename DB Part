@@ -1,0 +1,51 @@
+import pyautogui
+import time
+
+def login_rdp_and_run_commands(server_name, username, password, commands):
+    # Step 1: Win + R
+    pyautogui.hotkey('win', 'r')
+    time.sleep(1)
+
+    # Step 2: Type 'mstsc' and press Enter
+    pyautogui.write('mstsc')
+    pyautogui.press('enter')
+    time.sleep(2)
+
+    # Step 3: Enter Server Name
+    pyautogui.write(server_name)
+    pyautogui.press('enter')
+    time.sleep(5)
+
+    # Step 4: Enter Username
+    pyautogui.write(username)
+    pyautogui.press('tab')
+    time.sleep(1)
+
+    # Step 5: Enter Password
+    pyautogui.write(password)
+    pyautogui.press('enter')
+    time.sleep(15)  # wait for RDP to load
+
+    # Step 6: Open CMD inside RDP
+    pyautogui.hotkey('win', 'r')
+    time.sleep(1)
+    pyautogui.write('cmd')
+    pyautogui.press('enter')
+    time.sleep(2)
+
+    # Step 7: Run commands
+    for command in commands:
+        pyautogui.write(command)
+        pyautogui.press('enter')
+        time.sleep(2)
+
+# Example usage
+server = "Your-Server-Name"
+user = "YourUsername"
+passwd = "YourPassword"
+cmds = [
+    r"pushd C:\Your\Target\Path",
+    "DispatcherManagementAction.cmd stop /all"
+]
+
+login_rdp_and_run_commands(server, user, passwd, cmds)
