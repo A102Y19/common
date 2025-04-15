@@ -1,0 +1,26 @@
+Test-Path: C:\PAK\DB_login.ps1:29
+Line |
+  29 |  if (!(Test-Path $remoteSharePath)) {
+     |        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
+New-Item: C:\PAK\DB_login.ps1:30
+Line |
+  30 |      New-Item -Path $remoteSharePath -ItemType Directory -Force | Out- …
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Access to the path '\\AWSDMKNVAW0001\C$' is denied.
+New-Item: C:\PAK\DB_login.ps1:30
+Line |
+  30 |      New-Item -Path $remoteSharePath -ItemType Directory -Force | Out- …
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
+Copy-Item: C:\PAK\DB_login.ps1:32
+Line |
+  32 |  Copy-Item -Path $localSqlFile -Destination $remoteSharePath -Force
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
+Executing on remote...
+Invoke-Expression: C:\PAK\DB_login.ps1:41
+Line |
+  41 |  Invoke-Expression $fullCmd
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Unexpected token '\\AWSDMKNVAW0001' in expression or statement.
