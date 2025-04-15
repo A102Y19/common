@@ -1,17 +1,41 @@
-# Ensure the remote machine has PowerShell remoting enabled:
-Enable-PSRemoting -Force
+# === CONFIGURATION ===
+$psexecPath   = "C:\Tools\PsExec\PsExec.exe"  # Path to PsExec.exe
+$remoteServer = "RemoteMachineNameOrIP"
+$remoteUser   = "remote_username"
+$remotePass   = "remote_password"
 
-# Define your server, username, and password
-$server = "RemoteServerName"
-$username = "YourUsername"
-$password = "YourPassword"
+# SQLPlus login
+$dbUser       = "db_username"
+$dbPass       = "db_password"
+$ldapAlias    = "LDAP_ALIAS"
 
-# Create a credential object for authentication
-$cred = New-Object System.Management.Automation.PSCredential($username, ($password | ConvertTo-SecureString -AsPlainText -Force))
+# Remote .sql script path (on remote machine)
+$remoteSqlPath = "C:\temp\run_log_switch.sql"
 
-# Use Invoke-Command to run commands on the remote machine without opening RDP
-Invoke-Command -ComputerName $server -Credential $cred -ScriptBlock {
-    # Commands to execute on the remote machine
-    pushd C:\Your\Target\Path
-    .\DispatcherManagementAction.cmd stop /all
+# 1. PREPARE SQL SCRIPT LOCALLY
+$sqlContent = @"
+connect $dbUser/$dbPass@$ldapAlias
+alter system switch logfile;
+exit
+"@
+# Write to local file (same content needs to go to remote)
+$localSqlFile = "C:\temp\run_log_switch.sql"
+if (!(Test-Path "C:\temp")) { New-Item -Path "C:\temp" -ItemType Directory }
+$sqlContent | Out-File -FilePath $localSqlFile -Encoding ASCII -Force
+
+# 2. COPY FILE TO REMOTE MACHINE
+# Requires admin share access to remote C$ or use file share
+$remoteSharePath = "\\$remoteServer\C$\temp"
+if (!(Test-Path $remoteSharePath)) {
+    New-Item -Path $remoteSharePath -ItemType Directory -Force | Out-Null
 }
+Copy-Item -Path $localSqlFile -Destination $remoteSharePath -Force
+
+# 3. RUN SQLPLUS USING PsExec
+$commandToRun = "cmd.exe /c sqlplus /nolog @$remoteSqlPath"
+
+$fullCmd = "`"$psexecPath`" \\$remoteServer -u $remoteUser -p $remotePass $commandToRun"
+
+# 4. EXECUTE
+Write-Host "Executing on remote..." -ForegroundColor Cyan
+Invoke-Expression $fullCmd
