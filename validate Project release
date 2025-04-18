@@ -1,34 +1,15 @@
-def validate_projectrelease(input_value):
-    try:
-        men_file_path, folder_name = [x.strip() for x in input_value.split(",", 1)]
+def update_project_release(file_path, new_value):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
 
-        if not os.path.exists(men_file_path):
-            print(f"❌ .men file not found: {men_file_path}")
-            return
-
-        with open(men_file_path, 'r') as file:
-            lines = file.readlines()
-
-        updated = False
-        for i, line in enumerate(lines):
+    with open(file_path, 'w') as file:
+        for line in lines:
             if line.startswith("OM_PROJECTRELEASE="):
-                lines[i] = f"OM_PROJECTRELEASE={folder_name}\n"
-                updated = True
-                break
+                file.write(f"OM_PROJECTRELEASE={new_value}\n")
+            else:
+                file.write(line)
 
-        if updated:
-            with open(men_file_path, 'w') as file:
-                file.writelines(lines)
-            print(f"✅ OM_PROJECTRELEASE updated to '{folder_name}' in: {men_file_path}")
-        else:
-            print(f"⚠️ OM_PROJECTRELEASE line not found in {men_file_path}")
-
-    except ValueError:
-        print(f"❌ Invalid input format: '{input_value}'")
-        print("   ➡️ Format should be: 'C:\\Path\\file.men, FolderName'")
-    except Exception as e:
-        print(f"❌ Error updating .men file: {e}")
-
-
-elif action == "validate_projectrelease" and requirement == "y" and input_value:
-    validate_projectrelease(input_value)
+# Example usage
+file_path = r"C:\PAK\project.men"  # .men file path ikkada ivvali
+new_value = "YYYY"  # Replace value ikkada ivvali
+update_project_release(file_path, new_value)
