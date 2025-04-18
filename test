@@ -123,22 +123,33 @@ def create_folder(input_value):
         print(f"❌ Error creating folder: {e}")
 
 def update_project_release(file_path, new_value):
-    updated = False
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
 
-    with open(file_path, 'w') as file:
+        updated_lines = []
+        found = False
         for line in lines:
-            if line.strip().startswith("OM_PROJECTRELEASE="):
-                file.write(f"OM_PROJECTRELEASE={new_value}\n")
-                updated = True
+            if line.startswith("OM_PROJECTRELEASE="):
+                updated_lines.append(f"OM_PROJECTRELEASE={new_value}\n")
+                found = True
             else:
-                file.write(line)
+                updated_lines.append(line)
 
-    if updated:
-        print("✅ OM_PROJECTRELEASE updated to", new_value)
-    else:
-        print("⚠️ OM_PROJECTRELEASE line not found!")
+        if not found:
+            print(f"❌ 'OM_PROJECTRELEASE=' not found in {file_path}")
+            return False
+
+        with open(file_path, 'w') as file:
+            file.writelines(updated_lines)
+
+        print(f"✅ Updated 'OM_PROJECTRELEASE' to '{new_value}' in {file_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error updating .men file: {e}")
+        return False
+
 
 # Function to transfer the downloaded PAK file to a target folder
 def transfer_PAK_file(source_file, target_path):
@@ -233,22 +244,6 @@ def unzip_PAK_file(file_name, source_path):
         print(f"❌ Error extracting file '{file_name}': {e}")
         return False
 
-def transfer_Executable_file(source_file, target_path):
-    """Move the downloaded file to a specific target folder."""
-    destination_file = os.path.join(target_path, os.path.basename(source_file))
-
-    try:
-        if os.path.exists(source_file):
-            shutil.move(source_file, destination_file)
-            print(f"✅ File moved successfully to: {destination_file}")
-            return True
-        else:
-            print(f"❌ File move failed: '{source_file}' not found")
-            return False
-    except Exception as e:
-        print(f"❌ Error moving file '{source_file}': {e}")
-        return False
-
 
 # Initialize Chrome WebDriver only once
 driver = webdriver.Chrome(options=options)
@@ -288,6 +283,13 @@ for index, row in df.iterrows():
 
     elif action == "create folder" and requirement == "Y" and input_value:
         create_folder(input_value)
+		
+	elif action == "update project release" and requirement == "Y" and input_value:
+        try:
+            men_file_path, release_value = [x.strip() for x in input_value.split(",", 1)]
+            update_project_release(men_file_path, release_value)
+        except Exception as e:
+            print(f"❌ Invalid input or error in update_project_release: {e}")
     
     elif action == "transfer pak file" and requirement == "Y" and input_value:
         if downloaded_file_path:
@@ -328,17 +330,9 @@ for index, row in df.iterrows():
             print(f"✅ Unzipping successful for '{downloaded_file_name}' in {transferred_file_path}")
         else:
             print(f"❌ Unzipping failed for '{downloaded_file_name}'")
+			
+	
 
-    elif action == "transfer Executable file" and requirement == "Y" and input_value:
-        if downloaded_file_path:
-            transfer_success = transfer_Executable_file(downloaded_file_path, input_value)
-            if transfer_success:
-                transferred_file_path = input_value
-                print(f"✅ File transferred successfully to {transferred_file_path}.")
-            else:
-                print(f"❌ Transfer failed to {input_value}.")
-        else:
-            print("❌ No file available to transfer.")
 
 
 input("Press Enter to close")
