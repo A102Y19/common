@@ -1,15 +1,22 @@
 def update_project_release(file_path, new_value):
+    updated = False
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
     with open(file_path, 'w') as file:
         for line in lines:
-            if line.startswith("OM_PROJECTRELEASE="):
+            if line.strip().startswith("OM_PROJECTRELEASE="):
                 file.write(f"OM_PROJECTRELEASE={new_value}\n")
+                updated = True
             else:
                 file.write(line)
 
+    if updated:
+        print("✅ OM_PROJECTRELEASE updated to", new_value)
+    else:
+        print("⚠️ OM_PROJECTRELEASE line not found!")
+
 # Example usage
-file_path = r"C:\PAK\project.men"  # .men file path ikkada ivvali
-new_value = "YYYY"  # Replace value ikkada ivvali
+file_path = r"C:\PAK\LocalVariables1.men"  # Full path to your men file
+new_value = "R05_01a"  # Replace with your desired release
 update_project_release(file_path, new_value)
