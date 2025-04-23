@@ -1,26 +1,74 @@
-Test-Path: C:\PAK\DB_login.ps1:29
-Line |
-  29 |  if (!(Test-Path $remoteSharePath)) {
-     |        ~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
-New-Item: C:\PAK\DB_login.ps1:30
-Line |
-  30 |      New-Item -Path $remoteSharePath -ItemType Directory -Force | Out- …
-     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Access to the path '\\AWSDMKNVAW0001\C$' is denied.
-New-Item: C:\PAK\DB_login.ps1:30
-Line |
-  30 |      New-Item -Path $remoteSharePath -ItemType Directory -Force | Out- …
-     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
-Copy-Item: C:\PAK\DB_login.ps1:32
-Line |
-  32 |  Copy-Item -Path $localSqlFile -Destination $remoteSharePath -Force
-     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Access to the path '\\AWSDMKNVAW0001\C$\temp' is denied.
-Executing on remote...
-Invoke-Expression: C:\PAK\DB_login.ps1:41
-Line |
-  41 |  Invoke-Expression $fullCmd
-     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Unexpected token '\\AWSDMKNVAW0001' in expression or statement.
+import pyautogui
+import time
+import os
+
+def login_rdp_and_run_commands(server_name, password, commands):
+    # Step 1: Win + R
+    pyautogui.hotkey('win', 'r')
+    time.sleep(3)
+
+    # Step 2: Type 'mstsc' and press Enter
+    pyautogui.write('mstsc')
+    pyautogui.press('enter')
+    time.sleep(4)
+
+    # Step 3: Enter Server Name
+    pyautogui.write(server_name)
+    pyautogui.press('enter')
+    time.sleep(15)
+
+
+
+    # Step 5: Enter Password
+
+    pyautogui.press('left')
+    pyautogui.press('enter')
+    time.sleep(30)
+    
+    pyautogui.write(password)
+    pyautogui.press('enter')
+    time.sleep(30)  # wait for RDP to load
+
+    pyautogui.press('left')
+    pyautogui.press('enter')
+    time.sleep(30)
+
+    # Step 6: Open CMD inside RDP
+    pyautogui.hotkey('win', 'r')
+    time.sleep(1)
+    pyautogui.write('cmd')
+    pyautogui.press('enter')
+    time.sleep(10)
+
+    # Step 7: Run commands
+    for command in commands:
+        pyautogui.write(command)
+        pyautogui.press('enter')
+        time.sleep(2)
+
+# Example usage
+server_name = "AWSDMKNVAW0001"
+username = "SA-ITS-APSMDINT-LAB"
+password = "Jnjtestuser_1"
+dbuser = "PAKDB_USER"
+dbpass = "Lab2025_AtOmt3"
+commands = [
+    r'sqlplus PAKDB_USER/"Lab2025_AtOmt3"@DNV24001 ',
+    "ALTER SESSION SET NLS_DATE_FORMAT='DD/MM/YYYY HH24:MI:SS'; ",
+    "SET HEADING OFF",
+    "SET FEEDBACK OFF",
+    "SET PAGES 0",
+    "SPOOL <$LOGDIR>/logswitch_<$ORACLE_SID>.out",
+    "SELECT SYSDATE FROM DUAL;",
+    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
+    "set serveroutput on",
+    "exec pakuser_switch_logfile; ",
+    "exec pakuser_switch_logfile; ",
+    "exec pakuser_switch_logfile; ",
+    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
+    "SELECT SYSDATE FROM DUAL; ",
+    "SPOOL OFF",
+    "EXIT"
+]
+
+login_rdp_and_run_commands(server_name, password, commands)
