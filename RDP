@@ -1,0 +1,23 @@
+# ------------- CONFIGURATION -------------
+$serverName = "AWSDMKINVAW001"                   # 🔁 Remote machine name
+$username   = "JND\\your_username"              # 🔁 Your domain username
+$password   = "your_password"                   # 🔁 Your password
+$rdpFilePath = "C:\PAK\RDPFiles\AWSDMKINVAW001.rdp"  # 🔁 Path to your existing .rdp file
+# ------------------------------------------
+
+# ✅ Step 1: Store RDP credentials
+Write-Host "`n🔐 Storing credentials for $serverName..." -ForegroundColor Cyan
+cmdkey /add:$serverName /user:$username /pass:$password
+Write-Host "✅ Credentials stored in Windows Credential Manager.`n" -ForegroundColor Green
+
+# ✅ Step 2: Launch RDP
+if (Test-Path $rdpFilePath) {
+    Write-Host "📁 RDP file found: $rdpFilePath" -ForegroundColor Green
+    Write-Host "🚀 Launching RDP session with auto login..." -ForegroundColor Cyan
+    Start-Process "mstsc.exe" -ArgumentList "`"$rdpFilePath`""
+    Start-Sleep -Seconds 2
+    Write-Host "`n⏳ Please wait while remote session connects..." -ForegroundColor Yellow
+    Write-Host "🧭 Next step: Open Task Manager → Sign off users" -ForegroundColor DarkGray
+} else {
+    Write-Host "❌ ERROR: RDP file not found at $rdpFilePath" -ForegroundColor Red
+}
