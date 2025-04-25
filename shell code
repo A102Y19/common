@@ -1,0 +1,412 @@
+#!/bin/sh
+touch /tmp/output.out
+touch /tmp/arc_status.out
+ArchOutput="/tmp/output.out"
+LOGFILE="/tmp/arch_status.out"
+export ORACLE_SID=`sudo ls -d /sapmnt/???/profile/DEFAULT.PFL | grep "[A-Z]" | grep -iv "SUM\|tmp\|new\|old" | sed 's/\/sapmnt\///g' | awk -F/ '{print $1}'`
+export ORACLE_HOME=$(cat /etc/oratab | grep -i "${ORACLE_SID}" | awk -F"#" '{print $1}' | tr -d '\n' | awk -F":" '{print $2}')
+export PATH=${PATH}:${ORACLE_HOME}/bin
+export SAPDATA_HOME=/oracle/$ORACLE_SID
+export SAPEXE=/usr/sap/$ORACLE_SID/SYS/exe/run
+V_SID=$(cat /etc/oratab | grep -i "${ORACLE_SID}" | awk -F"#" '{print $1}' | tr -d '\n' | awk -F":" '{print $1}')
+riseEnv=$1 # DEV/QA/PROD
+sidadm=`echo $ORACLE_SID | awk '{print $1"adm"}' | awk '{print tolower($0)}'`
+orasid=`ps -ef|grep ora_pmon| grep -v grep | awk '{print $1}'`
+MAILTODL="bmittal4@its.jnj.com"
+
+######################
+## Helper Functions ##
+######################
+function riseApiVariables { ## function to initialize the RISE Environment based variables for API calls.
+  case ${riseEnv} in
+  DEV)
+    # RISE DEV configs
+    riseAuthUrl="https://dev.auth.rise.apps.jnj.com/v1/auth/login"
+    riseAuthRefreshUrl="http://dev.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+    riseTemplateInvokeUrl="https://dev.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+    riseJobLogUrl="https://dev.smartops.rise.apps.jnj.com/dnd/job-status/"
+    clientId="65f430bbd2201dfc4e960898"
+    clientSecret="30e66f703ee79afa684057d497a1b9e68c9cdefa2ccd1b404b233ce9da6f586a"
+    archAutoReactTemplateId=102830
+    ;;
+  QA)
+    # RISE QA configs
+    riseAuthUrl="https://qa.auth.rise.apps.jnj.com/v1/auth/login"
+    riseAuthRefreshUrl="http://qa.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+    riseTemplateInvokeUrl="https://qa.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+    riseJobLogUrl="https://qa.smartops.rise.apps.jnj.com/dnd/job-status/"
+    clientId="66b0d149011bca2aec55546d"
+    clientSecret="ce176e9cdbe6ee8438868cec3805ca8f7edc439f7beb38a1f7d48a11dc40138e"
+    archAutoReactTemplateId=100618
+    ;;
+  PROD)
+    # RISE PROD configs
+    riseAuthUrl="https://auth.rise.apps.jnj.com/v1/auth/login"
+    riseAuthRefreshUrl="http://auth.rise.apps.jnj.com/v1/auth/refresh-token"
+    riseTemplateInvokeUrl="https://aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+    riseJobLogUrl="https://smartops.rise.apps.jnj.com/dnd/job-status/"
+    clientId="66b0d1bec617e5832c03191a"
+    clientSecret="b2a208076c9195df997f7e9cfa33a49a6b917205553edfe0d11f10630d6064be"
+    archAutoReactTemplateId=100148
+    ;;
+  esac
+}
+
+function getJsonVal { ## Function module for JSON handling in JAVA
+  python -c "import json,sys;sys.stdout.write(json.dumps(json.load(sys.stdin)$1))"
+}
+
+function generateBearerToken { ## Generate the bearer token to invoke RISE templates.
+  loginResponse=$(curl --location --request POST "${riseAuthUrl}" --header 'Content-Type: application/json' --data '{"clientId": "'"${clientId}"'", "clientSecret": "'"${clientSecret}"'"}')
+  userId=$(echo "${loginResponse}" | jq -r '.data.user.userId' | tr -d '"')
+  accessToken=$(echo "${loginResponse}" | jq -r '.data.user.accessToken' | tr -d '"')
+  refreshToken=$(echo "${loginResponse}" | jq -r '.data.user.refreshToken' | tr -d '"')
+  # invoke refreshToken function in case the current token validity has expired.
+  if checkTokenValidity "${accessToken}"; then
+    accessToken=$(refreshToken "${userId}" "${refreshToken}")
+  fi
+}
+
+function checkTokenValidity { ## check the validity of the token.
+  # echo "Initial Access Token: $access_token"
+  payload=$(echo "$accessToken" | awk -F'.' '{print $2}')
+  # Decode the payload and remove line breaks
+  decodedPayload=$(echo "$payload=" | base64 -d)
+  # Extract the expiry time (exp) from the decoded payload
+  expiryTime=$(echo "${decodedPayload}" | jq -r '.exp')
+  currentTime=$(date +%s)
+  # compare if the current time and expiry time
+  if [ "$currentTime" -ge "$expiryTime" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function refreshToken { ## function to refresh the access token instead of generating new every time
+  accessToken=$(curl --location --request PATCH "$riseAuthRefreshUrl/$1" --header 'Content-Type: application/json' --data '{"refreshToken":"'"$2"'"}' | jq -r '.data.user.accessToken' | tr -d '"')
+}
+
+function invokeRiseTemplate { ## invoke templates in RISE for scale-in and scale-out
+  generateBearerToken         # invoke token generation
+  templateId=$1
+  #csHost=$(awk -F, 'NR > 1 {print $2}' "${configFile}" | head -1)
+  dbHost=`hostname`
+  apiQuery="?query=[{\"category\":\"ciOsVmHostname\",\"operator\":\"==\",\"value\":\"${dbHost}\"},{\"category\":\"ciSapNameSid\",\"operator\":\"==\",\"value\":\"${V_SID}\"}]"
+  # invoke the template call.
+  templateOut=$(curl --location --globoff "${riseTemplateInvokeUrl}${templateId}${apiQuery}" \
+    --header 'Content-Type: application/json' \
+    --header 'Authorization: Bearer '${accessToken} \
+    --data '{
+      "globalVariables": [
+        {
+          "variableKey": "$sidadm",
+          "variableValue": "'"${sidadmAcc}"'"
+        },
+        {
+          "variableKey": "$orasid",
+          "variableValue": "'"${orasidAcc}"'"
+        }
+      ],
+      "groupInfo": [
+        "app-rise-admin",
+        "app-rise-support-l1"
+      ]
+    }')
+  # get the parentId from the template execution
+  parentId=$(echo "${templateOut}" | jq -r '.data.parentId')
+  # jobId=$(echo "${templateOut}" | jq -r '.data.jobIds'][0]")
+  sleep 10
+  # invoking the job status api calls.
+  jobStatus=0
+  checkRiseJob "${parentId}"
+  while [ "${jobStatus}" == "Running" ]; do
+    checkRiseJob "${parentId}"
+    sleep 10
+  done
+}
+
+function checkRiseJob { ## check for job status
+  jobId=$1
+  generateBearerToken
+  jobResponse=$(curl --location "${riseJobLogUrl}${jobId}" --header 'Authorization: Bearer '${accessToken})
+  jobStatus=$(echo "${jobResponse}" | jq -r '.data.status' | tr -d '"')
+}
+
+function gatherArchTrend { ## Collect archive generation trend from DB
+sqlplus -s / as sysdba <<EOF
+set verify off
+set feedback off
+set termout off
+SET LINESIZE 100;
+set heading off
+spool /tmp/output.txt
+
+SELECT A.*,
+ Round(A.Count#*B.AVG#/1024/1024/1024) Daily_Avg_Gb
+  FROM
+  (
+  SELECT
+  To_Char(First_Time,'YYYY-MM-DD') DAY,
+  Count(1) Count#,
+  Min(RECID) Min#,
+  Max(RECID) Max#
+  FROM
+  v\$log_history
+  GROUP BY
+  To_Char(First_Time,'YYYY-MM-DD')
+  ORDER
+  BY 1 DESC
+ ) A,
+  (
+  SELECT
+  Avg(BYTES) AVG#,
+  Count(1) Count#,
+  Max(BYTES) Max_Bytes,
+  Min(BYTES) Min_Bytes
+  FROM
+  v\$log
+  ) B
+ where rownum < 3
+/
+spool off
+EXIT
+EOF
+}
+
+function compareArchTrend { ##Check current Oraarch usage and compare with trend to decide if autoreaction is needed or not
+  archGenerationSizeGBDay1=`awk NF < $ArchOutput | awk '{print $5}' | tr -d '' | head -1`
+  archGenerationSizeGBDay2=`awk NF < $ArchOutput | awk '{print $5}' | tr -d '' | tail -1`
+  archGenerationSizeGB2Days=$(("$archGenerationSizeGBDay1" + "$archGenerationSizeGBDay2"))
+
+  ## Check OS version and get oraarch free size
+  OSVersion=`cat /etc/redhat-release | grep -o '[0-9]*' | head -1| awk 'NF > 0'`
+  if [ $OSVersion -eq 6 ]; then
+        archDestFreeSizeGB=`df -h | grep arch | awk '{print $3}' | tr -d 'G'| awk 'NF > 0'`
+  else
+        archDestFreeSizeGB=`df -h | grep arch | awk '{print $4}' | tr -d 'G'| awk 'NF > 0'`
+  fi
+
+  ## Check max arch usage out of last 2 days generation for benchmarking
+  if [ $archGenerationSizeGBDay1 -gt $archGenerationSizeGBDay2 ]; then
+        maxArchGenerationSizeGB=$archGenerationSizeGBDay1
+  else
+        maxArchGenerationSizeGB=$archGenerationSizeGBDay2
+  fi
+
+  ## Compare current oraarch free space with 2 days max generation to decide on further action
+  if [ $archDestFreeSizeGB -gt $maxArchGenerationSizeGB ]; then
+        echo "Autoreaction not needed as ORAARCH has ${archDestFreeSizeGB}GB free space (Max archive generation in last 2 days is ${maxArchGenerationSizeGB}GB)"
+  else
+        echo "Autoreaction needed as ORAARCH has ${archDestFreeSizeGB}GB free space (Max archive generation in last 2 days is ${maxArchGenerationSizeGB}GB)"
+  fi
+}
+
+function getArchTrends { ## Gather archive trends
+sqlplus -s / as sysdba <<EOF > /tmp/archive_trend.xls
+SET MARKUP HTML ON ENTMAP ON PREFORMAT OFF SPOOL ON;
+SET HEADING OFF;
+SET FEEDBACK OFF;
+
+-- Retrieve database name and hostname
+ALTER SESSION SET NLS_DATE_FORMAT='dd/mm/yyyy hh24:mi:ss';
+SELECT 'Database Name:', sys_context('USERENV', 'DB_NAME') FROM dual;
+SELECT 'Hostname:', utl_inaddr.get_host_name FROM dual;
+SELECT 'Date/Time:', sysdate FROM dual;
+
+-- Retrieve archives generated in last 5 days
+ALTER SESSION SET NLS_DATE_FORMAT='dd/mm/yyyy';
+SELECT 'Archive Generation Trend in Last 5 days' FROM dual;
+SELECT 'Day', 'Total Size(MB)', 'No. of archives' FROM dual;
+
+SELECT TRUNC(COMPLETION_TIME, 'DD') AS Day, ROUND(SUM(BLOCKS * BLOCK_SIZE) / 1024 / 1024) AS GB, COUNT(*) AS Archives_Generated
+FROM v\$archived_log
+WHERE TRUNC(COMPLETION_TIME) >= TRUNC(SYSDATE) - 5
+GROUP BY TRUNC(COMPLETION_TIME, 'DD'), thread#
+ORDER BY 1 DESC;
+
+-- Retrieve archives generated in last 24 hours
+ALTER SESSION SET NLS_DATE_FORMAT='dd/mm/yyyy hh24:mi:ss';
+SELECT 'Archive Generation Trend in Last 24 Hours' FROM dual;
+SELECT 'Time Period', 'Archive Generation (MB)', 'No. of archives' FROM dual;
+
+SELECT TRUNC(COMPLETION_TIME, 'HH24') AS Hour,
+       ROUND(SUM(BLOCKS * BLOCK_SIZE) / 1048576) AS MB,
+       COUNT(*) AS Archives
+FROM v\$archived_log
+WHERE COMPLETION_TIME >= SYSTIMESTAMP - INTERVAL '1' DAY
+GROUP BY TRUNC(COMPLETION_TIME, 'HH24')
+ORDER BY 1 DESC;
+
+EOF
+
+}
+
+function monitorArchUsage { ## Check oraarch usage and trigger autoreaction
+# Specify the target usage percentages
+#targetUsage_1=33
+targetUsage_1=33
+targetUsage_2=50
+targetUsage_3=60
+targetUsage_4=70
+targetUsage_5=80
+targetUsage_6=90
+
+# Get archive file system usage
+arc_filesystem=`timeout 5 df -PTk 2>&1 | df -PTk 2>&1 | grep oraarch | awk '{print $7}'`
+archDestUsedPercent=`df -PTk 2>&1 | df -PTk 2>&1 | grep $arc_filesystem | awk '{print $6}' | tr -d '%'`
+
+# Check if the usage exceeds the threshold
+if [ "$archDestUsedPercent" -lt "$targetUsage_1" ]; then
+        echo "ORAARCH usage is below "$targetUsage_1"% threshold. No action needed !!!"
+elif [ "$archDestUsedPercent" -ge "$targetUsage_1" ] && [ "$archDestUsedPercent" -lt "$targetUsage_2" ]; then
+        echo "ORAARCH usage has exceeded "$targetUsage_1"%. Sending mail"
+        echo "ACTION NEEDED -> Archive file system has exceeded "$targetUsage_1"%, needs attention. Mail sent with details. Please check backups and do the needful" >> $LOGFILE
+        _sendMail "ACTION NEEDED -> Archive file system has exceeded $targetUsage_1 %, needs attention. Refer attached archive summary, check backups and do the needful"
+        _getPrimaryArchStats
+elif [ "$archDestUsedPercent" -ge "$targetUsage_2" ] && [ "$archDestUsedPercent" -lt "$targetUsage_3" ]; then
+        echo "ORAARCH usage has exceeded "$targetUsage_2"%. Sending mail"
+        echo "ACTION NEEDED -> Archive file system has exceeded "$targetUsage_2"%, needs attention. Mail sent with details. Please check backups and do the needful" >> $LOGFILE
+        _sendMail "ACTION NEEDED -> Archive file system has exceeded $targetUsage_2 %, needs attention. Refer attached archive summary, check backups and do the needful"
+        _getPrimaryArchStats
+elif [ "$archDestUsedPercent" -ge "$targetUsage_3" ] && [ "$archDestUsedPercent" -lt "$targetUsage_4" ]; then
+        echo "ORAARCH usage has exceeded "$targetUsage_3"%. Sending mail"
+        echo "ACTION NEEDED -> Archive file system has exceeded "$targetUsage_3"%, needs attention. Mail sent with details. Please check backups and do the needful" >> $LOGFILE
+        _sendMail "ACTION NEEDED -> Archive file system has exceeded $targetUsage_3 %, needs attention. Refer attached archive summary, check backups and do the needful"
+        _getPrimaryArchStats
+elif [ "$archDestUsedPercent" -ge "$targetUsage_4" ] && [ "$archDestUsedPercent" -lt "$targetUsage_5" ]; then
+        echo "ORAARCH usage has exceeded "$targetUsage_4"%. Sending mail"
+        echo "ACTION NEEDED -> Archive file system has exceeded "$targetUsage_4"%, needs attention. Mail sent with details. Please check backups and do the needful" >> $LOGFILE
+        _sendMail "ACTION NEEDED -> Archive file system has exceeded $targetUsage_4 %, needs attention. Refer attached archive summary, check backups and do the needful"
+        _getPrimaryArchStats
+elif [ "$archDestUsedPercent" -ge "$targetUsage_5" ] && [ "$archDestUsedPercent" -lt "$targetUsage_6" ]; then
+        echo "ORAARCH usage has exceeded "$targetUsage_5"%. Sending mail"
+        echo "ACTION NEEDED -> Archive file system has exceeded "$targetUsage_5"%, needs attention. Mail sent with details. Please check backups and do the needful" >> $LOGFILE
+        _sendMail "ACTION NEEDED -> Archive file system has exceeded $targetUsage_5 %, needs attention. Refer attached archive summary, check backups and do the needful"
+        _getPrimaryArchStats
+elif [ "$archDestUsedPercent" -ge "$targetUsage_6" ]; then
+      echo "ORAARCH usage has exceeded "$targetUsage_6"%. CRITICAL SITUATION *** Sending mail, creating incident & triggering autoreaction"
+      echo "*** CRITICAL SITUATION. Archive file system has exceeded "$targetUsage_6"%. Autoreaction automation triggered to switch on SECONDARY destination. Please monitor ***" >> $LOGFILE
+      _sendMail "CRITICAL SITUATION -> Archive file system has exceeded $targetUsage_6 %, Autoreaction automation triggered to switch on SECONDARY destination. Please monitor!!!"
+      _getPrimaryArchStats
+      riseApiVariables ${riseEnv} 2>/dev/null
+      # invoke the RISE API call.
+      invokeRiseTemplate "${archAutoReactTemplateId}"
+      case ${jobStatus} in
+      Finished)
+        echo "${crntTimeStamp} : Arch Auto Reaction Template was triggered and the job : ${parentId} has finished successfully."
+        ;;
+      Failed | Interrupted | Cancelled)
+        echo "${crntTimeStamp} : Arch Auto Reaction Template was triggered and the job : ${parentId} has failed. Please check the job logs for the failure." 
+        exit 2
+        ;;
+      esac
+    else
+      echo "File system usage is within acceptable limits. Exiting for now"
+      exit 0
+    fi
+}
+
+## Send mail function
+function _sendMail {
+recipient="bmittal4@its.jnj.com"
+subject="ARCHIVE MONITORING AUTOMATION ALERT on $(hostname -f) for ${SID} database"
+body=$1
+attachment="/tmp/archive_trend.xls"
+
+# Check if the attachment file exists
+if [ ! -f "$attachment" ]; then
+    echo "Attachment file not found: $attachment"
+    exit 1
+fi
+
+# Encode the attachment file in Base64
+attachment_encoded=$(base64 "$attachment")
+
+# Craft the email body with attachment
+email_body="From: RISE
+To: $recipient
+Subject: $subject
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=\"BOUNDARY\"
+
+--BOUNDARY
+Content-Type: text/plain; charset=\"US-ASCII\"
+Content-Disposition: inline
+
+$body
+
+--BOUNDARY
+Content-Type: application/octet-stream; name=\"$attachment\"
+Content-Disposition: attachment; filename=\"$attachment\"
+Content-Transfer-Encoding: base64
+
+$attachment_encoded
+
+--BOUNDARY--"
+
+# Send email using mail command
+echo "$email_body" | sendmail -t
+}
+
+## Get Primary Arch location from DB
+function _getPrimaryArchStats {
+PRIMARY_ARCH_DEST=`sqlplus -s / as sysdba <<EOF
+set echo off
+set verify off
+set heading off
+set feedback off
+set termout off
+SET LINESIZE 100;
+SELECT substr(value,10) FROM v\\$parameter where name = 'log_archive_dest_1';
+exit
+EOF`
+
+#primary_arc_fs=`echo $PRIMARY_ARCH_DEST | awk '{sub(/arch$/, "", $0); print}' | awk -v var="$SID" '{sub(var "$", "", $0); print}'`
+#primary_arc_fs=$(echo $PRIMARY_ARCH_DEST | awk '{sub(/arch$/, "", $0); print}' | awk '{print substr($0, 1, length($0)-3)}')
+primary_arc_fs=$(echo $PRIMARY_ARCH_DEST | awk '{print $1}'| awk '{sub(/arch$/, "", $0); print}'| awk '{print substr($0, 1, length($0)-3)}')
+P_OSFileSystem=$(df -P -h ${primary_arc_fs}* |tail -1 | grep -v "Filesystem" | awk '{print $2"|"$3"|"$4"|"$5}' | tr -d '%'| sed 's/G/ G/g'|sed 's/M/ M/g')
+P_OSFileSystemTotal=$(echo ${P_OSFileSystem} | awk -F"|" '{print $1}')
+P_OSFileSystemUsed=$(echo ${P_OSFileSystem} | awk -F"|" '{print $2}')
+P_OSFileSystemFreeSize=$(echo ${P_OSFileSystem} | awk -F"|" '{print $3}')
+P_OSFSPercentage=$(echo ${P_OSFileSystem} | awk -F"|" '{print $4}')
+PrimaryDestination=`echo $PRIMARY_ARCH_DEST| awk NF`
+echo "" >> $LOGFILE
+echo "ARCHIVE DESTINATION USAGE STATISTICS : " >> $LOGFILE
+echo "---------------------------------------------------------------------" >> $LOGFILE
+echo "PRIMARY DESTINATION FS  : $primary_arc_fs" >> $LOGFILE
+echo "TOTAL SPACE IS                     : $P_OSFileSystemTotal" >> $LOGFILE
+echo "USED SPACE IS                      : $P_OSFileSystemUsed" >> $LOGFILE
+echo "FREE SPACE IS                       : $P_OSFileSystemFreeSize" >> $LOGFILE
+echo "USED PERCENTAGE IS          : $P_OSFSPercentage%" >> $LOGFILE
+
+# send email notification
+DBSID=`ps -ef|grep ora_pmon| grep -v grep | awk '{print $8}' | tr -d 'ora_pmon_' | head -1`
+mail -s "ARCHIVE MONITORING AUTOMATION ALERT on $(hostname -f) for ${DBSID} database" $MAILTODL < $LOGFILE
+}
+
+#########################
+## START OF THE SCRIPT ##
+#########################
+
+## Check SQL connectivity and call archive functions otherwise exit
+if echo "exit;" | sqlplus / as sysdba 2>&1 | grep -q "Connected to:"
+then
+        #gatherArchTrend
+        #compareArchTrend
+        getArchTrends
+        monitorArchUsage
+else
+        echo "Unable to connect SQL, hence exiting..."
+        exit 0
+fi
+
+rm $ArchOutput
+if [ -f $LOGFILE ]; then
+	rm $LOGFILE
+fi
+
+#######################
+## END OF THE SCRIPT ##
+#######################
+
