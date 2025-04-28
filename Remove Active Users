@@ -1,0 +1,182 @@
+### RUN THIS COMMAND IN TERMINAL TO INSTALL LIBRARIES ###
+#  pip install pyautogui, pyperclip, pandas  #
+
+import pyautogui
+from pyautogui import getWindowsWithTitle
+import pyperclip
+import time
+import subprocess
+import re
+import os
+import pandas as pd
+
+#######################################################################################################
+# DO NOT CLICK ANYWHERE UNTIL THE SCRIPT RUNS AND RETURNS TO THIS WINDOW AFTER COMPLETING ALL SERVERS #
+#######################################################################################################
+
+# Handle CSV file for list of Servers
+server_data = pd.read_csv("server_cred.csv")
+count = 0
+failed_list = []
+for index, row in server_data.iterrows():
+    print(f'Current Server: {row["server"]}')
+
+    # Configurations
+    machineName = row["server"]  # Replace with actual server name
+    username   = row["username"]              #  Your domain username
+    password   = row["password"]                  #  Your password
+    rdp_file = "rdp_conn.rdp"
+
+    # Store Cred for RDP Auto Connect
+    store_cred = f'cmdkey /generic:TERMSRV/{machineName} /user:{username} /pass:{password}'
+    subprocess.run(store_cred, shell = True)
+
+    # RDP File for Session
+    with open(rdp_file,"w",encoding="utf-16") as f:
+        f.write(f'''screen mode id:i:2
+    use multimon:i:0
+    desktopwidth:i:1280
+    desktopheight:i:720
+    session bpp:i:32
+    winposstr:s:0,3,0,0,800,600
+    compression:i:1
+    keyboardhook:i:2
+    audiocapturemode:i:0
+    videoplaybackmode:i:1
+    connection type:i:7
+    networkautodetect:i:1
+    bandwidthautodetect:i:1
+    displayconnectionbar:i:1
+    enableworkspacereconnect:i:0
+    disable wallpaper:i:0
+    allow font smoothing:i:0
+    allow desktop composition:i:0
+    disable full window drag:i:1
+    disable menu anims:i:1
+    disable themes:i:0
+    disable cursor setting:i:0
+    bitmapcachepersistenable:i:1
+    full address:s:{machineName}
+    audiomode:i:0
+    redirectprinters:i:1
+    redirectlocation:i:0
+    redirectcomports:i:0
+    redirectsmartcards:i:1
+    redirectwebauthn:i:1
+    redirectclipboard:i:1
+    redirectposdevices:i:0
+    autoreconnection enabled:i:1
+    authentication level:i:2
+    prompt for credentials:i:0
+    negotiate security layer:i:1
+    remoteapplicationmode:i:0
+    alternate shell:s:
+    shell working directory:s:
+    gatewayhostname:s:
+    gatewayusagemethod:i:4
+    gatewaycredentialssource:i:4
+    gatewayprofileusagemethod:i:0
+    promptcredentialonce:i:0
+    gatewaybrokeringtype:i:0
+    use redirection server name:i:0
+    rdgiskdcproxy:i:0
+    kdcproxyname:s:
+    enablerdsaadauth:i:0
+    ''')
+
+    # Call Remote Desktop Connection
+    subprocess.Popen(["mstsc", rdp_file])
+    print("Launching RDP session...")
+    time.sleep(8)
+
+    # Handle Confirmation Dialog
+    pyautogui.press('tab', presses=2, interval = 0.2)
+    pyautogui.press('enter')
+    time.sleep(15)
+
+    # Wait for RDP to Load
+    max_wait = 30
+    start = time.time()
+    while True:
+        windows = getWindowsWithTitle(machineName)
+        if windows:
+            break
+        if time.time() - start > max_wait:
+            failed_list.append(machineName)
+            raise TimeoutError(f'Failed to Connect for {machineName}')
+        time.sleep(0.5)
+
+    # Handle Information Warning of the Server
+    pyautogui.press('enter')
+    time.sleep(20)
+
+    # Go Inside the RDP Window
+    pyautogui.moveTo(800,400)
+    pyautogui.click()
+
+    # Run Command Prompt
+    pyautogui.hotkey("win","r")
+    time.sleep(1)
+    pyautogui.write("cmd")
+    pyautogui.press('enter')
+    time.sleep(2)
+
+    # Get All Sessions
+    pyautogui.write("query session")
+    pyautogui.press("enter")
+    time.sleep(1)
+
+    # Copy the Session Data
+    pyautogui.hotkey("ctrl","a")
+    pyautogui.hotkey("ctrl","c")
+    time.sleep(1)
+
+    # Paste Data for Parsing
+    output = pyperclip.paste()
+
+    # Parsing the Session Data
+    session_lines = output.strip().splitlines()
+    current_session_id = None
+    sessions_to_logoff = []
+
+    for line in session_lines:
+        match = re.search(r'(\S+)\s+(\S+)\s+(\d+)\s+(Active|Disc)',line)
+        if match:
+            session_name, user, session_id, state = match.groups()
+            if username.lower().split('\\')[-1] in line.lower():
+                current_session_id = session_id
+            else:
+                sessions_to_logoff.append((session_name, user, session_id, state))
+
+    # Loging Off all other Users
+    for session in sessions_to_logoff:
+        print(f'Logging off Session:{session[0]} User:{session[1]} ID:{session[2]} State:{session[3]}')
+        cmd = f'logoff {session[2]}'
+        pyautogui.write(cmd)
+        pyautogui.press("enter")
+        time.sleep(2)
+
+    #print("All other Users Logged Off Successfully")
+
+    # Logging of Current User
+    print("Logging off Current Session")
+    pyautogui.write(f'logoff {current_session_id}')
+    pyautogui.press("enter")
+    time.sleep(2)
+
+    # Delete RDP Credentials
+    delete_cred = f'cmdkey /delete: TERMSRV/{machineName}'
+    subprocess.run(delete_cred, shell = True)
+    time.sleep(1)
+
+    # Delete RDP File
+    os.remove(rdp_file)
+    time.sleep(2)
+
+    print(f'Successfully Logged Off all Users on Server: {row["server"]}\n')
+    count+=1
+
+print(f'Completed the Task for {count - len(failed_list)} Servers Successfully!')
+print(f'Failed to Connect {len(failed_list)} Servers:\n',failed_list)
+
+
