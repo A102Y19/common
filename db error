@@ -129,30 +129,38 @@ pyautogui.press('tab', presses=2, interval = 0.2)
 pyautogui.press('enter')
 time.sleep(4)
 
+
+dbuser = "PAKDB_USER"
+dbpass = "Lab2025_AtOmt3"
+sql_login = f'sqlplus {dbuser}/"{dbpass}"@DNV24001 '
+commands = [
+    sql_login,
+    "ALTER SESSION SET NLS_DATE_FORMAT='DD/MM/YYYY HH24:MI:SS'; ",
+    "SET HEADING OFF",
+    "SET FEEDBACK OFF",
+    "SET PAGES 0",
+    "SPOOL <$LOGDIR>/logswitch_<$ORACLE_SID>.out",
+    "SELECT SYSDATE FROM DUAL;",
+    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
+    "set serveroutput on",
+    "exec pakuser_switch_logfile; ",
+    "exec pakuser_switch_logfile; ",
+    "exec pakuser_switch_logfile; ",
+    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
+    "SELECT SYSDATE FROM DUAL; ",
+    "select count(1) from v$session where username like 'OMP_JNJ_MD_ATOM_LAB_%';",
+    "set lines 200",
+    "col username for a30",
+    "col osuser for a30",
+    "col machine for a30",
+    "select username,osuser,machine,count(*) from v$session where username like 'OMP_JNJ_MD_ATOM_LAB_%' group by username,osuser,machine order by username,osuser,machine;",
+    "SPOOL OFF",
+    "EXIT"
+]
+
 for command in commands:
         pyautogui.write(command)
         pyautogui.press('enter')
         time.sleep(2)
 
-    dbuser = "PAKDB_USER"
-    dbpass = "Lab2025_AtOmt3"
-    sql_login = f'sqlplus {dbuser}/"{dbpass}"@DNV24001 '
-    
-    commands = [
-        sql_login,
-        "ALTER SESSION SET NLS_DATE_FORMAT='DD/MM/YYYY HH24:MI:SS'; ",
-        "SET HEADING OFF",
-        "SET FEEDBACK OFF",
-        "SET PAGES 0",
-        "SPOOL <$LOGDIR>/logswitch_<$ORACLE_SID>.out",
-        "SELECT SYSDATE FROM DUAL;",
-        "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
-        "set serveroutput on",
-        "exec pakuser_switch_logfile; ",
-        "exec pakuser_switch_logfile; ",
-        "exec pakuser_switch_logfile; ",
-        "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
-        "SELECT SYSDATE FROM DUAL; ",
-        "SPOOL OFF",
-        "EXIT"
-    ]
+print(f"All commands executed on {server} successfully")
