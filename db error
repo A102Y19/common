@@ -1,166 +1,44 @@
-###### RUN THIS COMMAND IN TERMINAL TO INSTALL LIBRARIES #####
-#  pip install pyautogui, pyperclip, pandas  #
+function riseApiVariables {
+    param (
+        [string]$riseEnv
+    )
 
-##### To RUN the SCRIPT #####
-# Place the csv file in the same Directory along with Python file #
-## Commands ##
-#  cd <directory>  #
-#  python rdp_users_pyautogui.py  #
-
-import pyautogui
-from pyautogui import getWindowsWithTitle
-import pyperclip
-import time
-import subprocess
-import re
-import os
-import pandas as pd
-
-#######################################################################################################
-# DO NOT CLICK ANYWHERE UNTIL THE SCRIPT RUNS AND RETURNS TO THIS WINDOW AFTER COMPLETING ALL SERVERS #
-#######################################################################################################
-
-# Handle CSV file for list of Servers
-
-
-
-server = "AWSDMKNVAW0001"
-username = "JNJ\SA-ITS-APSMDINT-LAB"
-password = os.getenv('rdp_pass')
-if password is not None:
-    print("Password retrieved successfully.")
-else:
-    print("Environment variable 'rdp_pass' not found.")
-
-print(f'Current Server: {server}')
-    
-
-    # Configurations
-machineName = server  # Replace with actual server name
-rdp_file = "rdp_conn.rdp"
-# Store Cred for RDP Auto Connect
-store_cred = f'cmdkey /generic:TERMSRV/{machineName} /user:{username} /pass:{password}'
-subprocess.run(store_cred, shell = True)
-# RDP File for Session
-with open(rdp_file,"w",encoding="utf-16") as f:
-    f.write(f'''screen mode id:i:2
-use multimon:i:0
-desktopwidth:i:1280
-desktopheight:i:720
-session bpp:i:32
-winposstr:s:0,3,0,0,800,600
-compression:i:1
-keyboardhook:i:2
-audiocapturemode:i:0
-videoplaybackmode:i:1
-connection type:i:7
-networkautodetect:i:1
-bandwidthautodetect:i:1
-displayconnectionbar:i:1
-enableworkspacereconnect:i:0
-disable wallpaper:i:0
-allow font smoothing:i:0
-allow desktop composition:i:0
-disable full window drag:i:1
-disable menu anims:i:1
-disable themes:i:0
-disable cursor setting:i:0
-bitmapcachepersistenable:i:1
-full address:s:{machineName}
-audiomode:i:0
-redirectprinters:i:1
-redirectlocation:i:0
-redirectcomports:i:0
-redirectsmartcards:i:1
-redirectwebauthn:i:1
-redirectclipboard:i:1
-redirectposdevices:i:0
-autoreconnection enabled:i:1
-authentication level:i:2
-prompt for credentials:i:0
-negotiate security layer:i:1
-remoteapplicationmode:i:0
-alternate shell:s:
-shell working directory:s:
-gatewayhostname:s:
-gatewayusagemethod:i:4
-gatewaycredentialssource:i:4
-gatewayprofileusagemethod:i:0
-promptcredentialonce:i:0
-gatewaybrokeringtype:i:0
-use redirection server name:i:0
-rdgiskdcproxy:i:0
-kdcproxyname:s:
-enablerdsaadauth:i:0
-''')
-# Call Remote Desktop Connection
-subprocess.Popen(["mstsc", rdp_file])
-print("Launching RDP session...")
-time.sleep(8)
-# Handle Confirmation Dialog
-pyautogui.press('tab', presses=2, interval = 0.2)
-pyautogui.press('enter')
-time.sleep(15)
-# Wait for RDP to Load
-max_wait = 30
-start = time.time()
-while True:
-    windows = getWindowsWithTitle(machineName)
-    if windows:
-        break
-    if time.time() - start > max_wait:
-        failed_list.append(machineName)
-        raise TimeoutError(f'Failed to Connect for {machineName}')
-    time.sleep(0.5)
-# Handle Information Warning of the Server
-pyautogui.press('enter')
-time.sleep(20)
-# Go Inside the RDP Window
-pyautogui.moveTo(800,400)
-pyautogui.click()
-# Run Command Prompt
-pyautogui.hotkey("win","r")
-time.sleep(1)
-pyautogui.write("cmd")
-pyautogui.hotkey('ctrl','shift','enter')
-time.sleep(2)
-# Handle Confirmation for cmd Dialog
-pyautogui.press('tab', presses=2, interval = 0.2)
-pyautogui.press('enter')
-time.sleep(4)
-
-
-dbuser = "PAKDB_USER"
-dbpass = "Lab2025_AtOmt3"
-sql_login = f'sqlplus {dbuser}/"{dbpass}"@DNV24001 '
-commands = [
-    sql_login,
-    "ALTER SESSION SET NLS_DATE_FORMAT='DD/MM/YYYY HH24:MI:SS'; ",
-    "SET HEADING OFF",
-    "SET FEEDBACK OFF",
-    "SET PAGES 0",
-    "SPOOL <$LOGDIR>/logswitch_<$ORACLE_SID>.out",
-    "SELECT SYSDATE FROM DUAL;",
-    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
-    "set serveroutput on",
-    "exec pakuser_switch_logfile; ",
-    "exec pakuser_switch_logfile; ",
-    "exec pakuser_switch_logfile; ",
-    "SELECT MAX(SEQUENCE#) AS LAST_GENERATED_SEQUENCE FROM V$ARCHIVED_LOG; ",
-    "SELECT SYSDATE FROM DUAL; ",
-    "select count(1) from v$session where username like 'OMP_JNJ_MD_ATOM_LAB_%';",
-    "set lines 200",
-    "col username for a30",
-    "col osuser for a30",
-    "col machine for a30",
-    "select username,osuser,machine,count(*) from v$session where username like 'OMP_JNJ_MD_ATOM_LAB_%' group by username,osuser,machine order by username,osuser,machine;",
-    "SPOOL OFF",
-    "EXIT"
-]
-
-for command in commands:
-        pyautogui.write(command)
-        pyautogui.press('enter')
-        time.sleep(2)
-
-print(f"All commands executed on {server} successfully")
+    switch ($riseEnv) {
+        "DEV" {
+            # RISE DEV configs
+            $riseAuthUrl = "https://dev.auth.rise.apps.jnj.com/v1/auth/login"
+            $riseAuthRefreshUrl = "http://dev.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $riseTemplateInvokeUrl = "https://dev.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $riseJobLogUrl = "https://dev.smartops.rise.apps.jnj.com/dnd/job-status/"
+            $clientId = "65f430bbd2201dfc4e960898"
+            $clientSecret = "30e66f703ee79afa684057d497a1b9e68c9cdefa2ccd1b404b233ce9da6f586a"
+            $archAutoReactTemplateId = 102830
+            break
+        }
+        "QA" {
+            # RISE QA configs
+            $riseAuthUrl = "https://qa.auth.rise.apps.jnj.com/v1/auth/login"
+            $riseAuthRefreshUrl = "http://qa.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $riseTemplateInvokeUrl = "https://qa.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $riseJobLogUrl = "https://qa.smartops.rise.apps.jnj.com/dnd/job-status/"
+            $clientId = "66b0d149011bca2aec55546d"
+            $clientSecret = "ce176e9cdbe6ee8438868cec3805ca8f7edc439f7beb38a1f7d48a11dc40138e"
+            $archAutoReactTemplateId = 100618
+            break
+        }
+        "PROD" {
+            # RISE PROD configs
+            $riseAuthUrl = "https://auth.rise.apps.jnj.com/v1/auth/login"
+            $riseAuthRefreshUrl = "http://auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $riseTemplateInvokeUrl = "https://aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $riseJobLogUrl = "https://smartops.rise.apps.jnj.com/dnd/job-status/"
+            $clientId = "66b0d1bec617e5832c03191a"
+            $clientSecret = "b2a208076c9195df997f7e9cfa33a49a6b917205553edfe0d11f10630d6064be"
+            $archAutoReactTemplateId = 100148
+            break
+        }
+        default {
+            Write-Host "Invalid riseEnv value provided"
+        }
+    }
+}
