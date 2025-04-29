@@ -1,0 +1,12 @@
+with open("machine_list.txt", "r") as file:
+    lines = file.readlines()
+
+machine_names = []
+for line in lines:
+    match = re.search(r'JNJ\\(AWS-[A-Z0-9\-]+)', line)
+    if match:
+        machine_names.append(match.group(1))
+
+with open("final_machine_list.txt", "w") as outfile:
+    for machine in machine_names:
+        outfile.write(machine.strip() + "\n")
