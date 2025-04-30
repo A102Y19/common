@@ -1,10 +1,13 @@
-function getJsonVal {
-    param (
-        [string]$jsonPath
-    )
-
-    $json = Get-Content -Raw -Path $stdin
-    $jsonObject = $json | ConvertFrom-Json
-    $result = $jsonObject | Select-Object -ExpandProperty $jsonPath
-    $result | ConvertTo-Json
-}
+PS C:\Windows\system32> C:\PAK\agent_monitoring.ps1 -riseEnv "DEV"
+Triggering Agent Monitoring Template...
+refreshToken : Failed to refresh token: 
+308 Permanent Redirect
+308 Permanent Redirect
+nginx
+At C:\PAK\agent_monitoring.ps1:75 char:31
++ ... cessToken = refreshToken -userId $script:userId -refreshToken $script ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,refreshToken
+ 
+2025-04-30 17:19:20 : Failed to generate bearer token.
