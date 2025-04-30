@@ -1,24 +1,10 @@
-function refreshToken {
-    param (
-        [string]$userId,
-        [string]$refreshToken
-    )
-
-    $headers = @{
-        "Accept"       = "application/json"
-        "Content-Type" = "application/json"
-    }
-
-    $body = @{
-        userId       = $userId
-        refreshToken = $refreshToken
-    } | ConvertTo-Json -Depth 2
-
-    try {
-        $response = Invoke-RestMethod -Uri $script:riseAuthRefreshUrl -Method Post -Headers $headers -Body $body
-        return $response.accessToken
-    } catch {
-        Write-Error "refreshToken : Failed to refresh token: $($_.Exception.Message)"
-        return $null
-    }
-}
+PS C:\Windows\system32> C:\PAK\agent_monitoring.ps1 -riseEnv "DEV"
+Triggering Agent Monitoring Template...
+refreshToken : refreshToken : Failed to refresh token: The remote server returned an error: (404) Not Found.
+At C:\PAK\agent_monitoring.ps1:75 char:31
++ ... cessToken = refreshToken -userId $script:userId -refreshToken $script ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,refreshToken
+ 
+2025-04-30 17:24:07 : Failed to generate bearer token.
