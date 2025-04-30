@@ -1,10 +1,10 @@
-PS C:\Windows\system32> C:\PAK\agent_monitoring.ps1 -riseEnv "DEV"
 Triggering Agent Monitoring Template...
-refreshToken : refreshToken : Failed to refresh token: The remote server returned an error: (404) Not Found.
+refreshToken : refreshToken : Failed to refresh token: The term 'wite-Host' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
 At C:\PAK\agent_monitoring.ps1:75 char:31
 + ... cessToken = refreshToken -userId $script:userId -refreshToken $script ...
 +                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
     + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,refreshToken
  
-2025-04-30 17:24:07 : Failed to generate bearer token.
+2025-04-30 17:30:51 : Failed to generate bearer token.
