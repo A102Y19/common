@@ -1,11 +1,259 @@
-At C:\PAK\agent_monitoring.ps1:245 char:17
-+         "Failed"
-+                 ~
-Missing statement block in switch statement clause.
-At C:\PAK\agent_monitoring.ps1:246 char:22
-+         "Interrupted"
-+                      ~
-Missing statement block in switch statement clause.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : MissingSwitchStatementClause
- 
+# Configuration Variables
+param (
+    [string]$riseEnv  # DEV/QA/PROD
+)
+
+######################
+## Helper Functions ##
+######################
+
+function riseApiVariables {
+    param (
+        [string]$riseEnv
+    )
+
+    switch ($riseEnv) {
+        "DEV" {
+            $script:riseAuthUrl = "https://dev.auth.rise.apps.jnj.com/v1/auth/login"
+            $script:riseAuthRefreshUrl = "http://dev.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $script:riseTemplateInvokeUrl = "https://dev.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $script:riseJobLogUrl = "https://dev.smartops.rise.apps.jnj.com/dnd/job-status/"
+            $script:clientId = "65f430bbd2201dfc4e960898"
+            $script:clientSecret = "30e66f703ee79afa684057d497a1b9e68c9cdefa2ccd1b404b233ce9da6f586a"
+            $script:archAutoReactTemplateId = 102830
+            break
+        }
+        "QA" {
+            $script:riseAuthUrl = "https://qa.auth.rise.apps.jnj.com/v1/auth/login"
+            $script:riseAuthRefreshUrl = "http://qa.auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $script:riseTemplateInvokeUrl = "https://qa.aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $script:riseJobLogUrl = "https://qa.smartops.rise.apps.jnj.com/dnd/job-status/"
+            $script:clientId = "66b0d149011bca2aec55546d"
+            $script:clientSecret = "ce176e9cdbe6ee8438868cec3805ca8f7edc439f7beb38a1f7d48a11dc40138e"
+            $script:archAutoReactTemplateId = 100618
+            break
+        }
+        "PROD" {
+            $script:riseAuthUrl = "https://auth.rise.apps.jnj.com/v1/auth/login"
+            $script:riseAuthRefreshUrl = "http://auth.rise.apps.jnj.com/v1/auth/refresh-token"
+            $script:riseTemplateInvokeUrl = "https://aggregator.rise.apps.jnj.com/v1/aggregator/discovery/executeJobV2/"
+            $script:riseJobLogUrl = "https://smartops.rise.apps.jnj.com/dnd/job-status/"
+            $script:clientId = "66b0d1bec617e5832c03191a"
+            $script:clientSecret = "b2a208076c9195df997f7e9cfa33a49a6b917205553edfe0d11f10630d6064be"
+            $script:archAutoReactTemplateId = 100148
+            break
+        }
+        default {
+            Write-Host "Invalid riseEnv value provided"
+            exit 1
+        }
+    }
+}
+
+function getJsonVal {
+    param (
+        [string]$jsonPath
+    )
+
+    $json = Get-Content -Raw -Path $stdin
+    $jsonObject = $json | ConvertFrom-Json
+    $result = $jsonObject | Select-Object -ExpandProperty $jsonPath
+    $result | ConvertTo-Json
+}
+
+function generateBearerToken {
+    $loginResponse = Invoke-RestMethod -Uri $script:riseAuthUrl -Method Post -ContentType "application/json" -Body (@{
+        clientId     = $script:clientId
+        clientSecret = $script:clientSecret
+    } | ConvertTo-Json)
+
+    $script:userId = $loginResponse.data.user.userId
+    $script:accessToken = $loginResponse.data.user.accessToken
+    $script:refreshToken = $loginResponse.data.user.refreshToken
+
+    if (checkTokenValidity -accessToken $script:accessToken) {
+        $script:accessToken = refreshToken -userId $script:userId -refreshToken $script:refreshToken
+    }
+
+    return $script:accessToken
+}
+
+function checkTokenValidity {
+    param (
+        [string]$accessToken
+    )
+
+    $payload = $accessToken.Split('.')[1]
+    switch ($payload.Length % 4) {
+        2 { $payload += '==' }
+        3 { $payload += '=' }
+        1 { $payload += '===' }
+    }
+
+    $payload = $payload.Replace('-', '+').Replace('_', '/')
+    $decodedPayload = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($payload))
+    $payloadObj = $decodedPayload | ConvertFrom-Json
+    $expiryTime = $payloadObj.exp
+    $currentTime = [int][double]::Parse((Get-Date -UFormat %s))
+
+    return ($currentTime -ge $expiryTime)
+}
+
+function refreshToken {
+    param (
+        [string]$userId,
+        [string]$refreshToken
+    )
+
+    $url = "$script:riseAuthRefreshUrl/$userId"
+    $headers = @{ "Content-Type" = "application/json" }
+    $body = @{ refreshToken = $refreshToken } | ConvertTo-Json
+
+    try {
+        $response = Invoke-RestMethod -Method Patch -Uri $url -Headers $headers -Body $body
+        return $response.data.user.accessToken
+    } catch {
+        Write-Error "Failed to refresh token: $_"
+        return $null
+    }
+}
+
+function invokeRiseTemplate {
+    param (
+        [string]$templateId
+    )
+
+    generateBearerToken
+
+    $dbHost = $env:COMPUTERNAME
+    $apiQuery = '?query=[{"category":"ciOsVmHostname","operator":"==","value":"' + $dbHost + '"}]'
+
+    $invokeUrl = "${script:riseTemplateInvokeUrl}${templateId}${apiQuery}"
+    $headers = @{
+        "Content-Type"  = "application/json"
+        "Authorization" = "Bearer $script:accessToken"
+    }
+
+    $body = @{
+        globalVariables = @(
+            @{ variableKey = '$sidadm'; variableValue = 'dummySIDADM' },
+            @{ variableKey = '$orasid'; variableValue = 'dummyORASID' }
+        )
+        groupInfo = @("app-rise-admin", "app-rise-support-l1")
+    } | ConvertTo-Json -Depth 5
+
+    try {
+        $response = Invoke-RestMethod -Uri $invokeUrl -Method Post -Headers $headers -Body $body -UseBasicParsing
+        $script:parentId = $response.data.parentId
+    } catch {
+        Write-Error "Failed to invoke template: $_"
+        return
+    }
+
+    Start-Sleep -Seconds 10
+
+    $script:jobStatus = "Running"
+    checkRiseJob -jobId $script:parentId
+    while ($script:jobStatus -eq "Running") {
+        Start-Sleep -Seconds 10
+        checkRiseJob -jobId $script:parentId
+    }
+}
+
+function checkRiseJob {
+    param (
+        [string]$jobId
+    )
+
+    generateBearerToken
+    $headers = @{ "Authorization" = "Bearer $script:accessToken" }
+    $url = "$script:riseJobLogUrl$jobId"
+
+    try {
+        $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -UseBasicParsing
+        $script:jobStatus = $response.data.status
+    } catch {
+        Write-Error "Failed to check job status: $_"
+        $script:jobStatus = "Unknown"
+    }
+}
+
+function agent_monitoring {
+    Write-Host "Triggering Agent Monitoring Template..."
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Call API setup
+    riseApiVariables -riseEnv $riseEnv
+    $accessToken = generateBearerToken -riseAuthUrl $riseAuthUrl -clientId $clientId -clientSecret $clientSecret
+
+    if (-not $accessToken) {
+        Write-Host "$timestamp : Failed to generate bearer token."
+        exit 1
+    }
+
+    $dbHost = $env:COMPUTERNAME
+    $query = '?query=[{"category":"ciOsVmHostname","operator":"==","value":"' + $dbHost + '"}]'
+    $url = "${riseTemplateInvokeUrl}${archAutoReactTemplateId}${query}"
+
+    $headers = @{
+        "Authorization" = "Bearer $accessToken"
+        "Content-Type"  = "application/json"
+    }
+
+    $body = @{
+        groupInfo = @("app-rise-admin", "app-rise-support-l1")
+    } | ConvertTo-Json -Depth 10
+
+    try {
+        $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -UseBasicParsing
+        $script:parentId = $response.data.parentId
+        Write-Host "$timestamp : Agent Monitoring template triggered successfully with Job ID: $($script:parentId)"
+    } catch {
+        Write-Host "$timestamp : Failed to trigger Agent Monitoring Template"
+        Write-Host $_
+        exit 1
+    }
+
+    Start-Sleep -Seconds 10
+
+    # Polling job status
+    $script:jobStatus = "Running"
+
+    while ($script:jobStatus -eq "Running") {
+        Start-Sleep -Seconds 10
+        try {
+            $statusUrl = "$riseJobLogUrl$($script:parentId)"
+            $statusHeaders = @{
+                "Authorization" = "Bearer $accessToken"
+            }
+
+            $statusResp = Invoke-RestMethod -Uri $statusUrl -Headers $statusHeaders -UseBasicParsing
+            $script:jobStatus = $statusResp.data.status
+        } catch {
+            Write-Host "$timestamp : Failed to fetch job status."
+            Write-Host $_
+            exit 1
+        }
+    }
+
+    # Switch for final status
+    switch ($script:jobStatus) {
+        "Finished" {
+            Write-Host "$timestamp : Agent Monitoring Template job $($script:parentId) completed successfully."
+        }
+        {$_ -in "Failed", "Interrupted", "Cancelled" } {
+            Write-Host "$timestamp : Agent Monitoring Template job $($script:parentId) failed with status: $script:jobStatus"
+            exit 2
+        }
+        default {
+            Write-Host "$timestamp : Unexpected job status: $script:jobStatus"
+            exit 3
+        }
+    }
+}
+####################
+## Execute Script ##
+####################
+
+agent_monitoring $riseEnv
