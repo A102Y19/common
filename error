@@ -1,15 +1,76 @@
-switch ($script:jobStatus) {
-    "Finished" {
-        Write-Host "$timestamp : Agent start Template was triggered and the job : $($script:parentId) has finished successfully."
-    }
-    "Failed"
-    "Interrupted"
-    "Cancelled" {
-        Write-Host "$timestamp : Agent start Template was triggered and the job : $($script:parentId) has failed. Please check the job logs for the failure."
-        exit 2
-    }
-    default {
-        Write-Host "Unexpected job status: $($script:jobStatus)"
+function agent_monitoring {
+    Write-Host "Triggering Agent Monitoring Template..."
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Call API setup
+    riseApiVariables -riseEnv $riseEnv
+    $accessToken = generateBearerToken -riseAuthUrl $riseAuthUrl -clientId $clientId -clientSecret $clientSecret
+
+    if (-not $accessToken) {
+        Write-Host "$timestamp : Failed to generate bearer token."
         exit 1
+    }
+
+    $dbHost = $env:COMPUTERNAME
+    $query = '?query=[{"category":"ciOsVmHostname","operator":"==","value":"' + $dbHost + '"}]'
+    $url = "${riseTemplateInvokeUrl}${archAutoReactTemplateId}${query}"
+
+    $headers = @{
+        "Authorization" = "Bearer $accessToken"
+        "Content-Type"  = "application/json"
+    }
+
+    $body = @{
+        groupInfo = @("app-rise-admin", "app-rise-support-l1")
+    } | ConvertTo-Json -Depth 10
+
+    try {
+        $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -UseBasicParsing
+        $script:parentId = $response.data.parentId
+        Write-Host "$timestamp : Agent Monitoring template triggered successfully with Job ID: $($script:parentId)"
+    } catch {
+        Write-Host "$timestamp : Failed to trigger Agent Monitoring Template"
+        Write-Host $_
+        exit 1
+    }
+
+    Start-Sleep -Seconds 10
+
+    # Polling job status
+    $script:jobStatus = "Running"
+
+    while ($script:jobStatus -eq "Running") {
+        Start-Sleep -Seconds 10
+        try {
+            $statusUrl = "$riseJobLogUrl$($script:parentId)"
+            $statusHeaders = @{
+                "Authorization" = "Bearer $accessToken"
+            }
+
+            $statusResp = Invoke-RestMethod -Uri $statusUrl -Headers $statusHeaders -UseBasicParsing
+            $script:jobStatus = $statusResp.data.status
+        } catch {
+            Write-Host "$timestamp : Failed to fetch job status."
+            Write-Host $_
+            exit 1
+        }
+    }
+
+    # Switch for final status
+    switch ($script:jobStatus) {
+        "Finished" {
+            Write-Host "$timestamp : Agent Monitoring Template job $($script:parentId) completed successfully."
+        }
+        "Failed"
+        "Interrupted"
+        "Cancelled" {
+            Write-Host "$timestamp : Agent Monitoring Template job $($script:parentId) failed with status: $script:jobStatus"
+            exit 2
+        }
+        default {
+            Write-Host "$timestamp : Unexpected job status: $script:jobStatus"
+            exit 3
+        }
     }
 }
