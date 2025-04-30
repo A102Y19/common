@@ -1,20 +1,27 @@
-function agent_monitoring { ## Agent monitoring
-    ## Checks and found that agent is OFFLINE
-    ## When agent is OFFLINE, then call RISE workflow
-      riseApiVariables ${riseEnv} 2>/dev/null
-      # invoke the RISE API call.
-      invokeRiseTemplate "${archAutoReactTemplateId}"
-      case ${jobStatus} in
-      Finished)
-        echo "${crntTimeStamp} : Agent start Template was triggered and the job : ${parentId} has finished successfully."
-        ;;
-      Failed | Interrupted | Cancelled)
-        echo "${crntTimeStamp} : Agent start Template was triggered and the job : ${parentId} has failed. Please check the job logs for the failure." 
-        exit 2
-        ;;
-      esac
-    else
-      echo "File system usage is within acceptable limits. Exiting for now"
-      exit 0
-    fi
-}
+At C:\PAK\agent_monitoring.ps1:199 char:21
++             "Failed" | "Interrupted" | "Cancelled" {
++                     ~
+Missing statement block in switch statement clause.
+At C:\PAK\agent_monitoring.ps1:199 char:21
++             "Failed" | "Interrupted" | "Cancelled" {
++                     ~
+Missing condition in switch statement clause.
+At C:\PAK\agent_monitoring.ps1:199 char:22
++             "Failed" | "Interrupted" | "Cancelled" {
++                      ~
+An empty pipe element is not allowed.
+At C:\PAK\agent_monitoring.ps1:199 char:40
++             "Failed" | "Interrupted" | "Cancelled" {
++                                        ~~~~~~~~~~~
+Expressions are only allowed as the first element of a pipeline.
+At C:\PAK\agent_monitoring.ps1:199 char:52
++             "Failed" | "Interrupted" | "Cancelled" {
++                                                    ~
+Unexpected token '{' in expression or statement.
+At C:\PAK\agent_monitoring.ps1:212 char:1
++ }
++ ~
+Unexpected token '}' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingSwitchStatementClause
+ 
