@@ -1,27 +1,10 @@
 At C:\PAK\agent_monitoring.ps1:199 char:21
-+             "Failed" | "Interrupted" | "Cancelled" {
++             "Failed"
 +                     ~
 Missing statement block in switch statement clause.
-At C:\PAK\agent_monitoring.ps1:199 char:21
-+             "Failed" | "Interrupted" | "Cancelled" {
-+                     ~
-Missing condition in switch statement clause.
-At C:\PAK\agent_monitoring.ps1:199 char:22
-+             "Failed" | "Interrupted" | "Cancelled" {
-+                      ~
-An empty pipe element is not allowed.
-At C:\PAK\agent_monitoring.ps1:199 char:40
-+             "Failed" | "Interrupted" | "Cancelled" {
-+                                        ~~~~~~~~~~~
-Expressions are only allowed as the first element of a pipeline.
-At C:\PAK\agent_monitoring.ps1:199 char:52
-+             "Failed" | "Interrupted" | "Cancelled" {
-+                                                    ~
-Unexpected token '{' in expression or statement.
-At C:\PAK\agent_monitoring.ps1:212 char:1
-+ }
-+ ~
-Unexpected token '}' in expression or statement.
+At C:\PAK\agent_monitoring.ps1:200 char:26
++             "Interrupted"
++                          ~
+Missing statement block in switch statement clause.
     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
     + FullyQualifiedErrorId : MissingSwitchStatementClause
- 
