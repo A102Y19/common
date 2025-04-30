@@ -1,10 +1,15 @@
-At C:\PAK\agent_monitoring.ps1:199 char:21
-+             "Failed"
-+                     ~
-Missing statement block in switch statement clause.
-At C:\PAK\agent_monitoring.ps1:200 char:26
-+             "Interrupted"
-+                          ~
-Missing statement block in switch statement clause.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : MissingSwitchStatementClause
+switch ($script:jobStatus) {
+    "Finished" {
+        Write-Host "$timestamp : Agent start Template was triggered and the job : $($script:parentId) has finished successfully."
+    }
+    "Failed"
+    "Interrupted"
+    "Cancelled" {
+        Write-Host "$timestamp : Agent start Template was triggered and the job : $($script:parentId) has failed. Please check the job logs for the failure."
+        exit 2
+    }
+    default {
+        Write-Host "Unexpected job status: $($script:jobStatus)"
+        exit 1
+    }
+}
