@@ -1,11 +1,15 @@
-PS C:\Windows\system32> C:\PAK\agent_monitoring.ps1 -riseEnv "DEV"
-Triggering Agent Monitoring Template...
-calling refresh URL: https://dev.auth.rise.apps.jnj.com/v1/auth/refresh-token
-refreshToken : refreshToken : Failed to refresh token: The remote server returned an error: (404) Not Found.
-At C:\PAK\agent_monitoring.ps1:75 char:31
-+ ... cessToken = refreshToken -userId $script:userId -refreshToken $script ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
-    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,refreshToken
- 
-2025-04-30 17:33:25 : Failed to generate bearer token.
+Enterd password for OMP_JNJ_MD_OMEGA_LAB_OPR
+Enterd password for OMP_JNJ_MD_OMEGA_LAB_SOP
+Enterd password for OMP_JNJ_MD_OMEGA_LAB_FCT
+Enterd password for OMP_JNJ_MD_OMEGA_LAB_UTL
+2025-05-05 02:19:09,798 - INFO - Sending UP...
+2025-05-05 02:19:11,901 - INFO - Sending ENTER...
+2025-05-05 02:19:13,953 - INFO - sending TAB
+2025-05-05 02:19:16,004 - INFO - Sending ENTER...
+🔍 Searching inside OMP for 'Update Installer'...
+✅ OMP Main window found.
+✅ Found 'Update Installer' pane: Update Installer (RDCBT.NA.JNJ.COM)
+🕒 Waiting for 'Information' pane every 60 seconds...
+✅ Found 'Information' pane: Information (RDCBT.NA.JNJ.COM)
+⚠️ Couldn't read text.
+⚠️ Couldn't click OK.
