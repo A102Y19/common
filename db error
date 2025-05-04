@@ -1,9 +1,13 @@
-from pywinauto import Desktop
+from pywinauto import Desktop, application
 import time
 import pyautogui
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 def wait_for_update_installer_and_information():
-    print("🔍 Searching inside OMP for 'Update Installer'...")
+    logging.info("🔍 Searching inside OMP for 'Update Installer'...")
 
     omp_window = None
     while omp_window is None:
@@ -12,30 +16,67 @@ def wait_for_update_installer_and_information():
             for win in windows:
                 if "OMP Data Change Manager" in win.window_text():
                     omp_window = win
-                    print("✅ OMP Main window found.")
+                    logging.info("✅ OMP Main window found.")
                     break
         except Exception as e:
-            print(f"Error finding main window: {e}")
+            logging.error(f"Error finding main window: {e}")
         time.sleep(5)
 
+    # Look for 'Update Installer' pane
+    logging.info("🔍 Searching for 'Update Installer' pane...")
     while True:
         all_panes = omp_window.descendants(control_type="Pane")
         for pane in all_panes:
             if "Update Installer" in pane.window_text():
-                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
+                logging.info(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
                 break
         else:
             time.sleep(10)
             continue
         break
 
-    print("🕒 Waiting for 'Information' pane every 60 seconds...")
+    # Wait for "Information" pane and handle it
+    logging.info("🕒 Waiting for 'Information' pane every 60 seconds...")
     while True:
         all_panes = omp_window.descendants(control_type="Pane")
         for pane in all_panes:
             if "Information" in pane.window_text():
-                print(f"✅ Found 'Information' pane: {pane.window_text()}")
-                print("💡 Skipping text read. Sending ENTER to close popup.")
+                logging.info(f"✅ Found 'Information' pane: {pane.window_text()}")
+                logging.info("💡 Skipping text read. Sending ENTER to close popup.")
                 pyautogui.press('enter')
+                handle_notepad_error()  # Handle Notepad error after closing popup
                 return
         time.sleep(60)
+
+def handle_notepad_error():
+    # Check if Notepad is open
+    logging.info("🔍 Checking if Notepad is open...")
+    notepad_window = None
+    while notepad_window is None:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "Notepad" in win.window_text():
+                    notepad_window = win
+                    logging.info("✅ Found Notepad window.")
+                    break
+        except Exception as e:
+            logging.error(f"Error finding Notepad window: {e}")
+        time.sleep(5)
+
+    # Read last line from Notepad
+    try:
+        notepad_edit = notepad_window.child_window(control_type="Edit")
+        text = notepad_edit.window_text()
+        lines = text.split("\n")
+        last_line = lines[-1] if lines else "No error message found"
+        logging.info(f"✅ Last line in Notepad: {last_line}")
+
+        # Close Notepad
+        notepad_window.close()
+        logging.info("✅ Closed Notepad.")
+    except Exception as e:
+        logging.error(f"Error handling Notepad: {e}")
+
+if __name__ == "__main__":
+    wait_for_update_installer_and_information()
