@@ -1,17 +1,27 @@
-DevTools listening on ws://127.0.0.1:62163/devtools/browser/d3ef9124-5cc6-49a2-a677-06de2a7a6731
-Accessing FTP: https://transferus.omp.com/url/qts2zdifagjb3pzv
-Password entered, waiting for login response...
-FTP Login Successful!
-Processing Executable File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/qts2zdifagjb3pzv#expl-tabl./SHARED/dverbeeck/9V7E17vcsVMNrimc/from_omp/VPCxBuilds/OMEGALAB
-Opening Executable File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/qts2zdifagjb3pzv#expl-tabl./SHARED/dverbeeck/9V7E17vcsVMNrimc/from_omp/VPCxBuilds/OMEGALAB
-Successfully opened Executable file path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=0&referrer=/url/qts2zdifagjb3pzv#expl-tabl./SHARED/dverbeeck/9V7E17vcsVMNrimc/from_omp/VPCxBuilds/OMEGALAB
-Finished executing access_executable_filepath()
-Processing Executable file download: 06_22_015.zip
-⬇️ Searching for executable: 06_22_015.zip to download...
-✅ Executable '06_22_015.zip' selected for download...
-✅ Download initiated for executable: '06_22_015.zip'
-✅ Download confirmed: '06_22_015.zip' is in C:\Users\GYellap1\Downloads
-downloaded file: 06_22_015.zip
-Error: Invalid file name True. it should be string
-❌ Transfer failed to \\awsusdmkfsxn01.jnj.com\mdd_tst_omp\OMPInstallPoint\R06_09\Solutions\JnJ_GlobalOrtho\releases.
-Press Enter to close
+def wait_for_schema_popup(timeout=600):
+    print("Waiting for schema popup...")
+
+    start_time = time.time()
+    found = False
+
+    while time.time() - start_time < timeout:
+        try:
+            app = Application(backend="uia").connect(title_re=".*Information.*")
+            dlg = app.window(title_re=".*Information.*")
+            if dlg.exists() and dlg.is_visible():
+                text_ctrl = dlg.child_window(control_type="Text")
+                message = text_ctrl.window_text()
+                
+                if "Update Installer" in message:
+                    print(f"[Update Installer Message] -> {message}")
+                    ok_btn = dlg.child_window(title="OK", control_type="Button")
+                    ok_btn.click()
+                    found = True
+                    break
+        except Exception:
+            pass
+
+        time.sleep(2)
+
+    if not found:
+        print("Schema popup not found within timeout.")
