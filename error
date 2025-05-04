@@ -1,4 +1,4 @@
-DevTools listening on ws://127.0.0.1:61234/devtools/browser/374e316a-8f39-481f-aa16-d589e9f3f99e
+DevTools listening on ws://127.0.0.1:62163/devtools/browser/d3ef9124-5cc6-49a2-a677-06de2a7a6731
 Accessing FTP: https://transferus.omp.com/url/qts2zdifagjb3pzv
 Password entered, waiting for login response...
 FTP Login Successful!
@@ -12,11 +12,6 @@ Processing Executable file download: 06_22_015.zip
 ✅ Download initiated for executable: '06_22_015.zip'
 ✅ Download confirmed: '06_22_015.zip' is in C:\Users\GYellap1\Downloads
 downloaded file: 06_22_015.zip
-Traceback (most recent call last):
-  File "C:\PAK\unzip_PAK.py", line 360, in <module>
-    transfer_success = transfer_executable_file(downloaded_executable_file_path, input_value)
-  File "C:\PAK\unzip_PAK.py", line 230, in transfer_executable_file
-    source_file_path = os.path.join(user_downloads_path, source_file)
-  File "<frozen ntpath>", line 139, in join
-  File "<frozen genericpath>", line 188, in _check_arg_types
-TypeError: join() argument must be str, bytes, or os.PathLike object, not 'bool'
+Error: Invalid file name True. it should be string
+❌ Transfer failed to \\awsusdmkfsxn01.jnj.com\mdd_tst_omp\OMPInstallPoint\R06_09\Solutions\JnJ_GlobalOrtho\releases.
+Press Enter to close
