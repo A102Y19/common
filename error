@@ -1,7 +1,25 @@
 from pywinauto import Desktop
+import time
 
-windows = Desktop(backend="uia").windows()
-for i, w in enumerate(windows):
-    title = w.window_text()
-    if title.strip():
-        print(f"{i+1:02d}: {title}")
+def deep_inspect_omp(title_keyword="OMP Data Change"):
+    print("🔍 Scanning deeply inside OMP window...")
+
+    try:
+        window = Desktop(backend="uia").window(title_re=f".*{title_keyword}.*")
+        window.set_focus()
+        time.sleep(1)
+
+        print("\n=== Dumping all child controls ===")
+        for i, elem in enumerate(window.descendants()):
+            ctrl_type = elem.friendly_class_name()
+            name = elem.window_text()
+            auto_id = elem.element_info.automation_id
+            print(f"{i+1:03}: [{ctrl_type}] - '{name}' - AutomationID: {auto_id}")
+        
+        print("\n🔚 End of element dump.")
+
+    except Exception as e:
+        print(f"⚠ Failed to inspect window: {e}")
+
+if __name__ == "__main__":
+    deep_inspect_omp()
