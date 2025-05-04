@@ -1,13 +1,52 @@
 from pywinauto import Desktop
+import time
 
-def list_visible_windows():
-    print("🔍 Scanning for visible windows...")
+def wait_for_update_installer():
+    print("Step 1: Waiting for 'Update Installer' popup...")
+    while True:
+        try:
+            win = Desktop(backend="uia").window(title_re=".*Update Installer.*")
+            if win.exists(timeout=2):
+                print("✅ Found 'Update Installer' popup!")
+                return
+        except:
+            pass
+        time.sleep(5)
 
-    windows = Desktop(backend="uia").windows()
-    for i, win in enumerate(windows):
-        title = win.window_text()
-        if title.strip():  # Skip blank ones
-            print(f"{i+1:02d}: {title}")
+def wait_for_information_popup():
+    print("Step 2: Checking every minute for 'Information' popup...")
+
+    while True:
+        try:
+            info_win = Desktop(backend="uia").window(title_re=".*Information.*")
+            if info_win.exists(timeout=2):
+                print("✅ Found 'Information' popup!")
+
+                # Print message inside popup
+                try:
+                    text_elem = info_win.child_window(control_type="Text")
+                    print("Popup Message:", text_elem.window_text())
+                except:
+                    print("⚠ Couldn't read text.")
+
+                # Click OK button
+                try:
+                    ok_btn = info_win.child_window(title="OK", control_type="Button")
+                    ok_btn.click()
+                    print("✅ Clicked OK button.")
+                except:
+                    print("⚠ Couldn't click OK button.")
+
+                break  # Exit after handling Information popup
+
+        except Exception as e:
+            print("⚠ Error while checking popup:", e)
+
+        time.sleep(60)  # Wait for 1 minute
+
+def monitor_popups():
+    wait_for_update_installer()
+    wait_for_information_popup()
 
 if __name__ == "__main__":
-    list_visible_windows()
+    monitor_popups()
