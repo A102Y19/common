@@ -1,33 +1,27 @@
-import pyautogui
-import time
-
-def wait_for_information_popup():
-    print("Step 1: Waiting for 'Update Installer' popup...")
-
-    # Step 1: Wait for Update Installer
-    while True:
-        installer = pyautogui.locateOnScreen("update_installer.png", confidence=0.8)
-        if installer:
-            print("Found 'Update Installer' popup.")
-            break
-        time.sleep(5)
-
-    print("Step 2: Checking every minute for 'Information' popup...")
-
-    # Step 2: Check for Information popup every 60 sec
-    while True:
-        info_popup = pyautogui.locateOnScreen("info_popup.png", confidence=0.8)
-        if info_popup:
-            print("Step 3: Found 'Information' popup.")
-            try:
-                ok_button = pyautogui.locateOnScreen("ok_button.png", confidence=0.8)
-                if ok_button:
-                    pyautogui.click(ok_button)
-                    print("Clicked OK on Information popup.")
-                else:
-                    print("OK button not found.")
-            except Exception as e:
-                print(f"Error clicking OK: {e}")
-            return
-        print("No 'Information' popup yet. Waiting 60 seconds...")
-        time.sleep(60)
+Step 1: Waiting for 'Update Installer' popup...
+[ WARN:0@252.206] global loadsave.cpp:268 cv::findDecoder imread_('update_installer.png'): can't open/read file: check file path/integrity
+Traceback (most recent call last):
+  File "C:\PAK\test1.py", line 536, in <module>
+    main_launcher()
+    ~~~~~~~~~~~~~^^
+  File "C:\PAK\test1.py", line 515, in main_launcher
+    wait_for_information_popup()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\PAK\test1.py", line 450, in wait_for_information_popup
+    installer = pyautogui.locateOnScreen("update_installer.png", confidence=0.8)
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyautogui\__init__.py", line 172, in wrapper
+    return wrappedFunction(*args, **kwargs)
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyautogui\__init__.py", line 210, in locateOnScreen
+    return pyscreeze.locateOnScreen(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 405, in locateOnScreen
+    retVal = locate(image, screenshotIm, **kwargs)
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 383, in locate
+    points = tuple(locateAll(needleImage, haystackImage, **kwargs))
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 231, in _locateAll_opencv
+    needleImage = _load_cv2(needleImage, grayscale)
+  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 193, in _load_cv2
+    raise IOError(
+    ...<3 lines>...
+    )
+OSError: Failed to read update_installer.png because file is missing, has improper permissions, or is an unsupported or invalid format
