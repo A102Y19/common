@@ -1,53 +1,33 @@
-from pywinauto import Desktop
+import pyautogui
 import time
 
-def wait_for_information_after_installer():
-    print("[Step 1] Waiting for 'Update Installer' popup...")
+def wait_for_information_popup():
+    print("Step 1: Waiting for 'Update Installer' popup...")
 
-    # Step 1: Wait until 'Update Installer' window appears
+    # Step 1: Wait for Update Installer
     while True:
-        try:
-            windows = Desktop(backend="uia").windows()
-            for win in windows:
-                if "Update Installer" in win.window_text():
-                    print("Found 'Update Installer' window.")
-                    goto_step_2 = True
-                    break
-            if goto_step_2:
-                break
-        except Exception as e:
-            print(f"Error in Step 1: {e}")
+        installer = pyautogui.locateOnScreen("update_installer.png", confidence=0.8)
+        if installer:
+            print("Found 'Update Installer' popup.")
+            break
         time.sleep(5)
 
-    print("[Step 2] 'Update Installer' found. Now checking every minute for 'Information' popup...")
+    print("Step 2: Checking every minute for 'Information' popup...")
 
-    # Step 2: After found, check every 60 seconds for 'Information' popup
+    # Step 2: Check for Information popup every 60 sec
     while True:
-        try:
-            windows = Desktop(backend="uia").windows()
-            for win in windows:
-                if "Information" in win.window_text():
-                    print("[Step 3] Found 'Information' popup.")
-                    
-                    try:
-                        # Extract and print message
-                        text_elem = win.child_window(control_type="Text")
-                        message = text_elem.window_text()
-                        print(f"[Popup Message]: {message}")
-                    except Exception as e:
-                        print(f"Couldn't read popup text: {e}")
-                    
-                    try:
-                        # Click OK
-                        ok_button = win.child_window(title="OK", control_type="Button")
-                        ok_button.click()
-                        print("Clicked OK on 'Information' popup.")
-                    except Exception as e:
-                        print(f"Couldn't click OK: {e}")
-
-                    return  # End after handling the Information popup
-        except Exception as e:
-            print(f"Error while checking 'Information' popup: {e}")
-
+        info_popup = pyautogui.locateOnScreen("info_popup.png", confidence=0.8)
+        if info_popup:
+            print("Step 3: Found 'Information' popup.")
+            try:
+                ok_button = pyautogui.locateOnScreen("ok_button.png", confidence=0.8)
+                if ok_button:
+                    pyautogui.click(ok_button)
+                    print("Clicked OK on Information popup.")
+                else:
+                    print("OK button not found.")
+            except Exception as e:
+                print(f"Error clicking OK: {e}")
+            return
         print("No 'Information' popup yet. Waiting 60 seconds...")
         time.sleep(60)
