@@ -1,7 +1,32 @@
-🔍 Searching inside OMP for 'Update Installer'...
-✅ OMP Main window found.
-✅ Found 'Update Installer' pane: Update Installer (RDCBT.NA.JNJ.COM)
-🕒 Waiting for 'Information' pane every 60 seconds...
-✅ Found 'Information' pane: Information (RDCBT.NA.JNJ.COM)
-⚠️ No readable text found in expected control types.
-⚠️ OK button not found.
+from pywinauto import Desktop
+import time
+
+def dump_information_popup_deep():
+    print("🔍 Searching inside OMP for 'Information' popup...")
+
+    app_window = None
+    while not app_window:
+        for win in Desktop(backend="uia").windows():
+            if "OMP Data Change Manager" in win.window_text():
+                app_window = win
+                print("✅ Found OMP main window.")
+                break
+        time.sleep(2)
+
+    found_info = False
+    while not found_info:
+        for pane in app_window.descendants(control_type="Pane"):
+            if "Information" in pane.window_text():
+                print(f"✅ Found 'Information' pane: {pane.window_text()}")
+                print("📦 Dumping all child controls in Information pane...\n")
+
+                # 🔁 Deeply log every element in the pane
+                for i, child in enumerate(pane.descendants()):
+                    try:
+                        print(f"{i+1:03}: [{child.control_type()}] - '{child.window_text()}' - "
+                              f"AutomationID: {child.automation_id()} - ClassName: {child.class_name()}")
+                    except Exception as e:
+                        print(f"{i+1:03}: Error reading control: {e}")
+                found_info = True
+                break
+        time.sleep(5)
