@@ -1,27 +1,38 @@
 from pywinauto import Desktop
 import time
 
-def read_information_popup_win32():
-    print("🔍 Trying with win32 backend to read Information popup...")
+def read_information_popup_text():
+    print("🔍 Searching for Information popup using win32 backend...")
 
-    app = Desktop(backend="win32")
-    info_win = None
+    desktop = Desktop(backend="win32")
+    popup = None
 
-    while not info_win:
-        for w in app.windows():
-            if "Information" in w.window_text():
-                info_win = w
-                print(f"✅ Found popup: {info_win.window_text()}")
+    while not popup:
+        for win in desktop.windows():
+            if "Information" in win.window_text():
+                popup = win
+                print(f"✅ Found popup: {popup.window_text()}")
                 break
         time.sleep(2)
 
-    # Now read all child controls using win32
-    print("📦 Dumping child texts...")
-    try:
-        for i, ctrl in enumerate(info_win.children()):
-            try:
-                print(f"{i+1:03}: {ctrl.window_text()}")
-            except Exception as e:
-                print(f"{i+1:03}: Error reading text: {e}")
-    except Exception as e:
-        print(f"❌ Failed to dump win32 controls: {e}")
+    # Try to extract meaningful text
+    print("📄 Reading text from child controls:")
+    found_msg = False
+    for i, ctrl in enumerate(popup.children()):
+        try:
+            text = ctrl.window_text().strip()
+            if text:
+                print(f"{i+1:02}: '{text}'")
+                # Check if it's a known message
+                if "error" in text.lower():
+                    print("❌ Detected an error message.")
+                    found_msg = True
+                elif "success" in text.lower():
+                    print("✅ Detected a success message.")
+                    found_msg = True
+        except Exception as e:
+            print(f"{i+1:02}: Error reading text: {e}")
+    
+    if not found_msg:
+        print("⚠️ Could not confidently determine success or error from the popup.")
+
