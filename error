@@ -1,8 +1,52 @@
-🔍 Scanning deeply inside OMP window...
+from pywinauto import Desktop
+import time
 
-=== Dumping all child controls ===
-001: [Pane] - 'Update Installer (RDCBT.NA.JNJ.COM)' - AutomationID:
-002: [Pane] - 'Information (RDCBT.NA.JNJ.COM)' - AutomationID:
-003: [Pane] - 'In Progress... (RDCBT.NA.JNJ.COM)' - AutomationID:
+def wait_for_information_popup():
+    print("Step 1: Waiting for 'Update Installer' pane...")
 
-🔚 End of element dump.
+    app_win = None
+    while True:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                title = win.window_text()
+                if "Update Installer" in title:
+                    print(f"✅ Found Update Installer pane: {title}")
+                    app_win = win
+                    break
+            if app_win:
+                break
+        except Exception as e:
+            print(f"Error during 'Update Installer' wait: {e}")
+        time.sleep(5)
+
+    print("Step 2: Monitoring every 60 seconds for 'Information' pane...")
+    while True:
+        try:
+            panes = app_win.descendants(control_type="Pane")
+            for pane in panes:
+                pane_title = pane.window_text()
+                if "Information" in pane_title:
+                    print(f"✅ Found Information pane: {pane_title}")
+                    # Try to find and print message
+                    try:
+                        msg_elem = pane.child_window(control_type="Text")
+                        print(f"[Popup Message]: {msg_elem.window_text()}")
+                    except Exception as e:
+                        print(f"⚠ Could not read message: {e}")
+
+                    # Try to click OK button
+                    try:
+                        ok_btn = pane.child_window(title="OK", control_type="Button")
+                        ok_btn.click_input()
+                        print("✅ Clicked OK button.")
+                    except Exception as e:
+                        print("⚠ Could not click OK button:", e)
+
+                    return  # Exit after handling
+        except Exception as e:
+            print("Error during Information popup check:", e)
+        time.sleep(60)  # Wait 60 seconds before next check
+
+# Run the function
+wait_for_information_popup()
