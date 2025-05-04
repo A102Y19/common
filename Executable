@@ -1,26 +1,106 @@
-import zipfile
-import os
+def download_executable_file(driver, file_name):
+    print(f"⬇️ Searching for executable: {file_name} to download...")
 
-def unzip_executable_file(zip_file_path, extract_to_path):
     try:
-        if not zip_file_path.lower().endswith(".zip"):
-            print(f"❌ Error: '{zip_file_path}' is not a zip file.")
+        # Find and click on the executable file element to initiate download
+        exec_element = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, f"//span[@role='gridcell' and text()='{file_name}']")
+            )
+        )
+        driver.execute_script("arguments[0].click();", exec_element)
+        print(f"✅ Executable '{file_name}' selected for download...")
+
+        # Wait for the download confirmation to load (implement appropriate wait as per the app)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//i[contains(@class, 'fa-download')]"))
+        )
+
+        # Click the actual download button
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[text()='{file_name}']//following::i[contains(@class, 'fa-download')][1]"))
+        )
+        driver.execute_script("arguments[0].click();", download_button)
+        print(f"✅ Download initiated for executable: '{file_name}'")
+
+        # Wait and confirm file is downloaded
+        download_path = get_download_path()
+        download_executable_file_path = os.path.join(download_path, file_name)
+        timeout = 30
+
+        while timeout > 0:
+            if os.path.exists(download_executable_file_path):
+                print(f"✅ Download confirmed: '{file_name}' is in {download_path}")
+                return file_name
+            time.sleep(30)
+            timeout -= 1
+
+        print(f"❌ Download failed: '{file_name}' not found in {download_path} after waiting.")
+        return False
+
+    except Exception as e:
+        print(f"❌ Error: Unable to download executable '{file_name}' - {e}")
+        return False
+
+def get_download_path():
+    return str(Path.home() / "Downloads")
+
+def transfer_executable_file(source_file, target_directory):
+    try:
+        # Validate source file name
+        if not isinstance(source_file, str) or not source_file.strip():
+            print(f"❌ Error: Invalid file name {source_file}. It should be a non-empty string.")
             return False
 
-        if not os.path.exists(zip_file_path):
-            print(f"❌ Zip file not found: {zip_file_path}")
+        # Build full path to Downloads folder
+        user_downloads_path = get_download_path()
+        source_file_path = os.path.join(user_downloads_path, source_file)
+
+        # Check if the source file exists
+        if not os.path.exists(source_file_path):
+            print(f"❌ Error: Source file '{source_file_path}' not found.")
             return False
 
-        if not os.path.exists(extract_to_path):
-            os.makedirs(extract_to_path)
+        # Create target directory if it doesn't exist
+        if not os.path.exists(target_directory):
+            os.makedirs(target_directory)
+            print(f"📁 Created target directory: {target_directory}")
 
-        print(f"📦 Unzipping '{zip_file_path}' to '{extract_to_path}'...")
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_to_path)
+        # Construct full destination path
+        destination_path = os.path.join(target_directory, source_file)
 
-        print("✅ Unzip completed successfully.")
+        # Move the file
+        shutil.move(source_file_path, destination_path)
+        print(f"✅ File moved successfully to {destination_path}")
         return True
 
     except Exception as e:
-        print(f"❌ Failed to unzip '{zip_file_path}' - {e}")
+        print(f"❌ Transfer failed due to error: {e}")
         return False
+
+
+    elif action == "download executable file" and requirement == "Y" and input_value:
+        print(f"Processing Executable file download: {input_value}")
+        if exec_tab_opened:
+            # Ensure we are in the Executable File Path tab
+            driver.switch_to.window(driver.window_handles[-1])
+            downloaded_executable_file_path = download_executable_file(driver, input_value)
+            downloaded_executable_file_name = input_value
+            time.sleep(30)
+            if downloaded_executable_file_path:
+                print(f"downloaded file: {downloaded_executable_file_name}")
+            else:
+                print("Download failed, File not avaibale")
+        else:
+            print("Cannot download Executable file: Executable File Path tab is not open.")
+
+    elif action == "transfer executable file" and requirement == "Y" and input_value:
+        if downloaded_executable_file_path:
+            transfer_success = transfer_executable_file(downloaded_executable_file_path, input_value)
+            if transfer_success:
+                transferred_executable_file_path = input_value
+                print(f"✅ Executable File transferred successfully to {transferred_executable_file_path}.")
+            else:
+                print(f"❌ Transfer failed to {input_value}.")
+        else:
+            print("❌ No Executable file available to transfer.")
