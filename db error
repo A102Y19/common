@@ -1,38 +1,38 @@
-from pywinauto import Desktop
+import pytesseract
+import pyautogui
+import cv2
 import time
+from PIL import Image
 
-def read_information_popup_text():
-    print("🔍 Searching for Information popup using win32 backend...")
+def read_information_popup_with_ocr():
+    print("📸 Taking screenshot for OCR...")
 
-    desktop = Desktop(backend="win32")
-    popup = None
-
-    while not popup:
-        for win in desktop.windows():
-            if "Information" in win.window_text():
-                popup = win
-                print(f"✅ Found popup: {popup.window_text()}")
-                break
-        time.sleep(2)
-
-    # Try to extract meaningful text
-    print("📄 Reading text from child controls:")
-    found_msg = False
-    for i, ctrl in enumerate(popup.children()):
-        try:
-            text = ctrl.window_text().strip()
-            if text:
-                print(f"{i+1:02}: '{text}'")
-                # Check if it's a known message
-                if "error" in text.lower():
-                    print("❌ Detected an error message.")
-                    found_msg = True
-                elif "success" in text.lower():
-                    print("✅ Detected a success message.")
-                    found_msg = True
-        except Exception as e:
-            print(f"{i+1:02}: Error reading text: {e}")
+    # Wait a bit to ensure popup is visible
+    time.sleep(2)
     
-    if not found_msg:
-        print("⚠️ Could not confidently determine success or error from the popup.")
+    # Take full screen screenshot
+    screenshot = pyautogui.screenshot()
+    screenshot.save("full_screen.png")
+
+    # Load with OpenCV
+    image = cv2.imread("full_screen.png")
+
+    # Optional: convert to grayscale for better accuracy
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # OCR processing
+    text = pytesseract.image_to_string(gray)
+
+    print("🧾 OCR Extracted Text:")
+    print("-" * 40)
+    print(text)
+    print("-" * 40)
+
+    # Check for known success or error keywords
+    if "success" in text.lower():
+        print("✅ Detected SUCCESS from OCR.")
+    elif "error" in text.lower():
+        print("❌ Detected ERROR from OCR.")
+    else:
+        print("⚠️ OCR could not confidently classify the message.")
 
