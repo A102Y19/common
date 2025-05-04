@@ -1,27 +1,53 @@
-def wait_for_schema_popup(timeout=600):
-    print("Waiting for schema popup...")
+from pywinauto import Desktop
+import time
 
-    start_time = time.time()
-    found = False
+def wait_for_information_after_installer():
+    print("[Step 1] Waiting for 'Update Installer' popup...")
 
-    while time.time() - start_time < timeout:
+    # Step 1: Wait until 'Update Installer' window appears
+    while True:
         try:
-            app = Application(backend="uia").connect(title_re=".*Information.*")
-            dlg = app.window(title_re=".*Information.*")
-            if dlg.exists() and dlg.is_visible():
-                text_ctrl = dlg.child_window(control_type="Text")
-                message = text_ctrl.window_text()
-                
-                if "Update Installer" in message:
-                    print(f"[Update Installer Message] -> {message}")
-                    ok_btn = dlg.child_window(title="OK", control_type="Button")
-                    ok_btn.click()
-                    found = True
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "Update Installer" in win.window_text():
+                    print("Found 'Update Installer' window.")
+                    goto_step_2 = True
                     break
-        except Exception:
-            pass
+            if goto_step_2:
+                break
+        except Exception as e:
+            print(f"Error in Step 1: {e}")
+        time.sleep(5)
 
-        time.sleep(2)
+    print("[Step 2] 'Update Installer' found. Now checking every minute for 'Information' popup...")
 
-    if not found:
-        print("Schema popup not found within timeout.")
+    # Step 2: After found, check every 60 seconds for 'Information' popup
+    while True:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "Information" in win.window_text():
+                    print("[Step 3] Found 'Information' popup.")
+                    
+                    try:
+                        # Extract and print message
+                        text_elem = win.child_window(control_type="Text")
+                        message = text_elem.window_text()
+                        print(f"[Popup Message]: {message}")
+                    except Exception as e:
+                        print(f"Couldn't read popup text: {e}")
+                    
+                    try:
+                        # Click OK
+                        ok_button = win.child_window(title="OK", control_type="Button")
+                        ok_button.click()
+                        print("Clicked OK on 'Information' popup.")
+                    except Exception as e:
+                        print(f"Couldn't click OK: {e}")
+
+                    return  # End after handling the Information popup
+        except Exception as e:
+            print(f"Error while checking 'Information' popup: {e}")
+
+        print("No 'Information' popup yet. Waiting 60 seconds...")
+        time.sleep(60)
