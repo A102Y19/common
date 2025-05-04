@@ -1,47 +1,67 @@
 from pywinauto import Desktop
-import pytesseract
-from PIL import ImageGrab
 import time
 
-def read_info_popup_via_ocr():
-    print("🔍 Looking for 'Information' popup inside OMP...")
+def wait_for_update_installer_and_information():
+    print("🔍 Searching inside OMP for 'Update Installer'...")
 
-    # Step 1: Find the OMP window and the Information pane
     omp_window = None
-    while not omp_window:
-        for w in Desktop(backend="uia").windows():
-            if "OMP Data Change Manager" in w.window_text():
-                omp_window = w
-                break
-        time.sleep(1)
+    while omp_window is None:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "OMP Data Change Manager" in win.window_text():
+                    omp_window = win
+                    print("✅ OMP Main window found.")
+                    break
+        except Exception as e:
+            print(f"Error finding main window: {e}")
+        time.sleep(5)
 
-    info_pane = None
-    while not info_pane:
-        for pane in omp_window.descendants(control_type="Pane"):
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
+            if "Update Installer" in pane.window_text():
+                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
+                break
+        else:
+            time.sleep(10)
+            continue
+        break
+
+    print("🕒 Waiting for 'Information' pane every 60 seconds...")
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
             if "Information" in pane.window_text():
-                info_pane = pane
                 print(f"✅ Found 'Information' pane: {pane.window_text()}")
-                break
-        time.sleep(1)
 
-    # Step 2: Get the rectangle of the Information pane
-    rect = info_pane.rectangle()
-    print(f"📸 Capturing region: {rect}")
+                # 📋 Try reading content from multiple control types
+                try:
+                    content_found = False
+                    for control_type in ["Text", "Edit", "Document"]:
+                        for t in pane.descendants(control_type=control_type):
+                            text = t.window_text().strip()
+                            if text:
+                                print(f"📋 [{control_type}] {text}")
+                                content_found = True
+                    if not content_found:
+                        print("⚠️ No readable text found in expected control types.")
+                except Exception as e:
+                    print(f"⚠️ Couldn't read text: {e}")
 
-    # Step 3: Screenshot that region
-    image = ImageGrab.grab(bbox=(rect.left, rect.top, rect.right, rect.bottom))
-    image.save("info_popup.png")  # Optional: for debugging
-
-    # Step 4: Run OCR
-    text = pytesseract.image_to_string(image)
-    print("🧾 OCR Output:\n" + text)
-
-    # Step 5: Classify
-    lower_text = text.lower()
-    if "success" in lower_text or "successfully" in lower_text:
-        print("✅ SUCCESS detected in popup.")
-    elif "fail" in lower_text or "error" in lower_text:
-        print("❌ ERROR detected in popup.")
-    else:
-        print("⚠️ Could not classify the popup content.")
-
+                # 🖱️ Try clicking OK button using flexible matching
+                try:
+                    buttons = pane.descendants(control_type="Button")
+                    clicked = False
+                    for btn in buttons:
+                        if "ok" in btn.window_text().lower():
+                            btn.click()
+                            print(f"✅ Clicked OK button: {btn.window_text()}")
+                            clicked = True
+                            break
+                    if not clicked:
+                        print("⚠️ OK button not found.")
+                except Exception as e:
+                    print(f"⚠️ Couldn't click OK: {e}")
+                return
+        time.sleep(60)
