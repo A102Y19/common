@@ -1,31 +1,39 @@
 import os
 import shutil
+from pathlib import Path
 
-def transfer_executable_file(source_file, target_path):
-    # Get the path to the user's Downloads folder dynamically
-    user_downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
-    
-    # Combine the Downloads path with the file name passed in as input
-    source_file_path = os.path.join(user_downloads_path, source_file)
-    
-    # Check if the source file exists before proceeding
-    if not os.path.exists(source_file_path):
-        print(f"Error: {source_file_path} not found.")
-        return False
-    
-    # Create the destination file path
-    destination_file = os.path.join(target_path, source_file)
-    
-    # Now, proceed with the file transfer using shutil.move
+def get_download_path():
+    return str(Path.home() / "Downloads")
+
+def transfer_executable_file(source_file, target_directory):
     try:
-        print(f"Moving file {source_file_path} to {destination_file}...")
-        
-        # Moving the file
-        shutil.move(source_file_path, destination_file)
-        
-        # Success
-        print(f"File {source_file} moved successfully.")
+        # Validate source file name
+        if not isinstance(source_file, str) or not source_file.strip():
+            print(f"❌ Error: Invalid file name {source_file}. It should be a non-empty string.")
+            return False
+
+        # Build full path to Downloads folder
+        user_downloads_path = get_download_path()
+        source_file_path = os.path.join(user_downloads_path, source_file)
+
+        # Check if the source file exists
+        if not os.path.exists(source_file_path):
+            print(f"❌ Error: Source file '{source_file_path}' not found.")
+            return False
+
+        # Create target directory if it doesn't exist
+        if not os.path.exists(target_directory):
+            os.makedirs(target_directory)
+            print(f"📁 Created target directory: {target_directory}")
+
+        # Construct full destination path
+        destination_path = os.path.join(target_directory, source_file)
+
+        # Move the file
+        shutil.move(source_file_path, destination_path)
+        print(f"✅ File moved successfully to {destination_path}")
         return True
+
     except Exception as e:
-        print(f"Error moving file: {e}")
+        print(f"❌ Transfer failed due to error: {e}")
         return False
