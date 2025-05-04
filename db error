@@ -1,32 +1,27 @@
 from pywinauto import Desktop
 import time
 
-def dump_information_popup_deep():
-    print("🔍 Searching inside OMP for 'Information' popup...")
+def read_information_popup_win32():
+    print("🔍 Trying with win32 backend to read Information popup...")
 
-    app_window = None
-    while not app_window:
-        for win in Desktop(backend="uia").windows():
-            if "OMP Data Change Manager" in win.window_text():
-                app_window = win
-                print("✅ Found OMP main window.")
+    app = Desktop(backend="win32")
+    info_win = None
+
+    while not info_win:
+        for w in app.windows():
+            if "Information" in w.window_text():
+                info_win = w
+                print(f"✅ Found popup: {info_win.window_text()}")
                 break
         time.sleep(2)
 
-    found_info = False
-    while not found_info:
-        for pane in app_window.descendants(control_type="Pane"):
-            if "Information" in pane.window_text():
-                print(f"✅ Found 'Information' pane: {pane.window_text()}")
-                print("📦 Dumping all child controls in Information pane...\n")
-
-                # 🔁 Deeply log every element in the pane
-                for i, child in enumerate(pane.descendants()):
-                    try:
-                        print(f"{i+1:03}: [{child.control_type()}] - '{child.window_text()}' - "
-                              f"AutomationID: {child.automation_id()} - ClassName: {child.class_name()}")
-                    except Exception as e:
-                        print(f"{i+1:03}: Error reading control: {e}")
-                found_info = True
-                break
-        time.sleep(5)
+    # Now read all child controls using win32
+    print("📦 Dumping child texts...")
+    try:
+        for i, ctrl in enumerate(info_win.children()):
+            try:
+                print(f"{i+1:03}: {ctrl.window_text()}")
+            except Exception as e:
+                print(f"{i+1:03}: Error reading text: {e}")
+    except Exception as e:
+        print(f"❌ Failed to dump win32 controls: {e}")
