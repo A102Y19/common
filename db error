@@ -1,38 +1,47 @@
+from pywinauto import Desktop
 import pytesseract
-import pyautogui
-import cv2
+from PIL import ImageGrab
 import time
-from PIL import Image
 
-def read_information_popup_with_ocr():
-    print("📸 Taking screenshot for OCR...")
+def read_info_popup_via_ocr():
+    print("🔍 Looking for 'Information' popup inside OMP...")
 
-    # Wait a bit to ensure popup is visible
-    time.sleep(2)
-    
-    # Take full screen screenshot
-    screenshot = pyautogui.screenshot()
-    screenshot.save("full_screen.png")
+    # Step 1: Find the OMP window and the Information pane
+    omp_window = None
+    while not omp_window:
+        for w in Desktop(backend="uia").windows():
+            if "OMP Data Change Manager" in w.window_text():
+                omp_window = w
+                break
+        time.sleep(1)
 
-    # Load with OpenCV
-    image = cv2.imread("full_screen.png")
+    info_pane = None
+    while not info_pane:
+        for pane in omp_window.descendants(control_type="Pane"):
+            if "Information" in pane.window_text():
+                info_pane = pane
+                print(f"✅ Found 'Information' pane: {pane.window_text()}")
+                break
+        time.sleep(1)
 
-    # Optional: convert to grayscale for better accuracy
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Step 2: Get the rectangle of the Information pane
+    rect = info_pane.rectangle()
+    print(f"📸 Capturing region: {rect}")
 
-    # OCR processing
-    text = pytesseract.image_to_string(gray)
+    # Step 3: Screenshot that region
+    image = ImageGrab.grab(bbox=(rect.left, rect.top, rect.right, rect.bottom))
+    image.save("info_popup.png")  # Optional: for debugging
 
-    print("🧾 OCR Extracted Text:")
-    print("-" * 40)
-    print(text)
-    print("-" * 40)
+    # Step 4: Run OCR
+    text = pytesseract.image_to_string(image)
+    print("🧾 OCR Output:\n" + text)
 
-    # Check for known success or error keywords
-    if "success" in text.lower():
-        print("✅ Detected SUCCESS from OCR.")
-    elif "error" in text.lower():
-        print("❌ Detected ERROR from OCR.")
+    # Step 5: Classify
+    lower_text = text.lower()
+    if "success" in lower_text or "successfully" in lower_text:
+        print("✅ SUCCESS detected in popup.")
+    elif "fail" in lower_text or "error" in lower_text:
+        print("❌ ERROR detected in popup.")
     else:
-        print("⚠️ OCR could not confidently classify the message.")
+        print("⚠️ Could not classify the popup content.")
 
