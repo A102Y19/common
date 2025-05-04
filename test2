@@ -79,8 +79,8 @@ def launching_OMP():
         time.sleep(5)
         logging.info("Login successful.")
 
-        logging.info("Clicking OMP LAB INSTANCE button...")
-        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP LAB INSTANCE')]")))
+        logging.info("Clicking OMP OMEGA LAB INSTANCE button...")
+        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP OMEGA LAB INSTANCE')]")))
         instance_button.click()
 
         time.sleep(5)
@@ -410,10 +410,10 @@ def schema_pass():
     load_dotenv("C:/PAK/.env")
     
     schema_keys = [
-        "OMP_JNJ_MD_ATOM_LAB_OPR",
-        "OMP_JNJ_MD_ATOM_LAB_SOP",
-        "OMP_JNJ_MD_ATOM_LAB_FCT",
-        "OMP_JNJ_MD_ATOM_LAB_UTL"
+        "OMP_JNJ_MD_OMEGA_LAB_OPR",
+        "OMP_JNJ_MD_OMEGA_LAB_SOP",
+        "OMP_JNJ_MD_OMEGA_LAB_FCT",
+        "OMP_JNJ_MD_OMEGA_LAB_UTL"
     ]
 
     for key in schema_keys:
@@ -441,12 +441,6 @@ def schema_pass():
     logging.info("Sending ENTER...")
     send_keys("{ENTER}")
 
-
-from pywinauto import Desktop
-import time
-
-from pywinauto import Desktop
-import time
 
 def wait_for_schema_popup():
     print("⌛ Waiting for schema execution popup...")
