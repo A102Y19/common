@@ -1,67 +1,7 @@
-from pywinauto import Desktop
-import time
-
-def wait_for_update_installer_and_information():
-    print("🔍 Searching inside OMP for 'Update Installer'...")
-
-    omp_window = None
-    while omp_window is None:
-        try:
-            windows = Desktop(backend="uia").windows()
-            for win in windows:
-                if "OMP Data Change Manager" in win.window_text():
-                    omp_window = win
-                    print("✅ OMP Main window found.")
-                    break
-        except Exception as e:
-            print(f"Error finding main window: {e}")
-        time.sleep(5)
-
-    while True:
-        all_panes = omp_window.descendants(control_type="Pane")
-        for pane in all_panes:
-            if "Update Installer" in pane.window_text():
-                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
-                break
-        else:
-            time.sleep(10)
-            continue
-        break
-
-    print("🕒 Waiting for 'Information' pane every 60 seconds...")
-    while True:
-        all_panes = omp_window.descendants(control_type="Pane")
-        for pane in all_panes:
-            if "Information" in pane.window_text():
-                print(f"✅ Found 'Information' pane: {pane.window_text()}")
-
-                # 📋 Try reading content from multiple control types
-                try:
-                    content_found = False
-                    for control_type in ["Text", "Edit", "Document"]:
-                        for t in pane.descendants(control_type=control_type):
-                            text = t.window_text().strip()
-                            if text:
-                                print(f"📋 [{control_type}] {text}")
-                                content_found = True
-                    if not content_found:
-                        print("⚠️ No readable text found in expected control types.")
-                except Exception as e:
-                    print(f"⚠️ Couldn't read text: {e}")
-
-                # 🖱️ Try clicking OK button using flexible matching
-                try:
-                    buttons = pane.descendants(control_type="Button")
-                    clicked = False
-                    for btn in buttons:
-                        if "ok" in btn.window_text().lower():
-                            btn.click()
-                            print(f"✅ Clicked OK button: {btn.window_text()}")
-                            clicked = True
-                            break
-                    if not clicked:
-                        print("⚠️ OK button not found.")
-                except Exception as e:
-                    print(f"⚠️ Couldn't click OK: {e}")
-                return
-        time.sleep(60)
+🔍 Searching inside OMP for 'Update Installer'...
+✅ OMP Main window found.
+✅ Found 'Update Installer' pane: Update Installer (RDCBT.NA.JNJ.COM)
+🕒 Waiting for 'Information' pane every 60 seconds...
+✅ Found 'Information' pane: Information (RDCBT.NA.JNJ.COM)
+⚠️ No readable text found in expected control types.
+⚠️ OK button not found.
