@@ -1,39 +1,26 @@
+import zipfile
 import os
-import shutil
-from pathlib import Path
 
-def get_download_path():
-    return str(Path.home() / "Downloads")
-
-def transfer_executable_file(source_file, target_directory):
+def unzip_executable_file(zip_file_path, extract_to_path):
     try:
-        # Validate source file name
-        if not isinstance(source_file, str) or not source_file.strip():
-            print(f"❌ Error: Invalid file name {source_file}. It should be a non-empty string.")
+        if not zip_file_path.lower().endswith(".zip"):
+            print(f"❌ Error: '{zip_file_path}' is not a zip file.")
             return False
 
-        # Build full path to Downloads folder
-        user_downloads_path = get_download_path()
-        source_file_path = os.path.join(user_downloads_path, source_file)
-
-        # Check if the source file exists
-        if not os.path.exists(source_file_path):
-            print(f"❌ Error: Source file '{source_file_path}' not found.")
+        if not os.path.exists(zip_file_path):
+            print(f"❌ Zip file not found: {zip_file_path}")
             return False
 
-        # Create target directory if it doesn't exist
-        if not os.path.exists(target_directory):
-            os.makedirs(target_directory)
-            print(f"📁 Created target directory: {target_directory}")
+        if not os.path.exists(extract_to_path):
+            os.makedirs(extract_to_path)
 
-        # Construct full destination path
-        destination_path = os.path.join(target_directory, source_file)
+        print(f"📦 Unzipping '{zip_file_path}' to '{extract_to_path}'...")
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_to_path)
 
-        # Move the file
-        shutil.move(source_file_path, destination_path)
-        print(f"✅ File moved successfully to {destination_path}")
+        print("✅ Unzip completed successfully.")
         return True
 
     except Exception as e:
-        print(f"❌ Transfer failed due to error: {e}")
+        print(f"❌ Failed to unzip '{zip_file_path}' - {e}")
         return False
