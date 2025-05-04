@@ -1,27 +1,13 @@
-Step 1: Waiting for 'Update Installer' popup...
-[ WARN:0@252.206] global loadsave.cpp:268 cv::findDecoder imread_('update_installer.png'): can't open/read file: check file path/integrity
-Traceback (most recent call last):
-  File "C:\PAK\test1.py", line 536, in <module>
-    main_launcher()
-    ~~~~~~~~~~~~~^^
-  File "C:\PAK\test1.py", line 515, in main_launcher
-    wait_for_information_popup()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\PAK\test1.py", line 450, in wait_for_information_popup
-    installer = pyautogui.locateOnScreen("update_installer.png", confidence=0.8)
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyautogui\__init__.py", line 172, in wrapper
-    return wrappedFunction(*args, **kwargs)
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyautogui\__init__.py", line 210, in locateOnScreen
-    return pyscreeze.locateOnScreen(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 405, in locateOnScreen
-    retVal = locate(image, screenshotIm, **kwargs)
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 383, in locate
-    points = tuple(locateAll(needleImage, haystackImage, **kwargs))
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 231, in _locateAll_opencv
-    needleImage = _load_cv2(needleImage, grayscale)
-  File "C:\Users\GYellap1\AppData\Local\Programs\Python\Python313\Lib\site-packages\pyscreeze\__init__.py", line 193, in _load_cv2
-    raise IOError(
-    ...<3 lines>...
-    )
-OSError: Failed to read update_installer.png because file is missing, has improper permissions, or is an unsupported or invalid format
+from pywinauto import Desktop
+
+def list_visible_windows():
+    print("🔍 Scanning for visible windows...")
+
+    windows = Desktop(backend="uia").windows()
+    for i, win in enumerate(windows):
+        title = win.window_text()
+        if title.strip():  # Skip blank ones
+            print(f"{i+1:02d}: {title}")
+
+if __name__ == "__main__":
+    list_visible_windows()
