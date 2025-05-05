@@ -1,4 +1,25 @@
-try:
+def handle_notepad_if_opened(timeout=60):
+    print("🔍 Checking if Notepad is open after ENTER...")
+    notepad_window = None
+    start_time = time.time()
+
+    while notepad_window is None and (time.time() - start_time < timeout):
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "Notepad" in win.window_text():
+                    notepad_window = win
+                    print("✅ Notepad window found.")
+                    break
+        except Exception as e:
+            print(f"Error finding Notepad: {e}")
+        time.sleep(5)
+
+    if notepad_window is None:
+        print("✅ No Notepad opened.")
+        return
+
+    try:
         time.sleep(2)  # Short wait for Notepad to fully load
 
         # Try to access the known auto_id for Notepad's edit box
