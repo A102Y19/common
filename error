@@ -41,32 +41,29 @@ def wait_for_update_installer_and_information():
                 print("💡 Skipping text read. Sending ENTER to close popup.")
                 pyautogui.press('enter')
                 print("🔍 Checking if Notepad is open after ENTER...")
-				notepad_window = None
-				start_time = time.time()
-                
-				while notepad_window is None and (time.time() - start_time < timeout):
-					try:
-						windows = Desktop(backend="uia").windows()
-						for win in windows:
-							if "Notepad" in win.window_text():
-								notepad_window = win
-								print("✅ Notepad window found.")
-								handle_notepad_if_opened()
-					except Exception as e:
-						print(f"Error finding Notepad: {e}")
-					time.sleep(5)
 
-				if notepad_window is None:
-					print("✅ No Notepad opened.")
-					return
-		
-                handle_notepad_if_opened()
+                notepad_window = None
+                start_time = time.time()
+                timeout = 60  # <- define timeout here
+
+                while notepad_window is None and (time.time() - start_time < timeout):
+                    try:
+                        windows = Desktop(backend="uia").windows()
+                        for win in windows:
+                            if "Notepad" in win.window_text():
+                                notepad_window = win
+                                print("✅ Notepad window found.")
+                                handle_notepad_if_opened(notepad_window)
+                                return
+                    except Exception as e:
+                        print(f"Error finding Notepad: {e}")
+                    time.sleep(5)
+
+                print("✅ No Notepad opened.")
                 return
         time.sleep(60)
 
-def handle_notepad_if_opened(timeout=60):
-
-    # Bring Notepad to front and copy text
+def handle_notepad_if_opened(notepad_window):
     try:
         notepad_window.set_focus()
         time.sleep(1)
@@ -92,14 +89,12 @@ def handle_notepad_if_opened(timeout=60):
 
         print("✅ Logs copied and saved to C:\\log\\failed_logs.txt")
 
-
         # Close original Notepad
         notepad_window.close()
         print("✅ Closed original Notepad.")
 
     except Exception as e:
         print(f"❌ Error during Notepad copy/save: {e}")
-
 
 if __name__ == "__main__":
     wait_for_update_installer_and_information()
