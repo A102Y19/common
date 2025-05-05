@@ -11,8 +11,8 @@ def handle_notepad_if_opened(timeout=60):
             windows = Desktop(backend="uia").windows()
             for win in windows:
                 if "Notepad" in win.window_text():
-                    notepad_window = win
                     print("✅ Notepad window found.")
+                    notepad_window = win
                     break
         except Exception as e:
             print(f"Error finding Notepad: {e}")
@@ -23,14 +23,23 @@ def handle_notepad_if_opened(timeout=60):
         return
 
     try:
-        # Use 'Edit' control to get all text
-        edit = notepad_window.child_window(control_type="Edit")
-        text = edit.iface_value.CurrentValue
+        print("🔍 Searching for Edit control...")
+        edit_controls = notepad_window.descendants(control_type="Edit")
+        if not edit_controls:
+            print("❌ Could not find Edit box in Notepad.")
+            return
+
+        text = edit_controls[0].window_text()
         lines = text.strip().splitlines()
-        last_line = lines[-1] if lines else "No text found"
-        print(f"📝 Last line in Notepad: {last_line}")
-        
-        # Close the Notepad window
+
+        error_lines = [line for line in lines if "error" in line.lower()]
+        if error_lines:
+            print("🛑 Error lines found in Notepad:")
+            for line in error_lines:
+                print(f"> {line}")
+        else:
+            print("✅ No error lines found in Notepad.")
+
         notepad_window.close()
         print("✅ Closed Notepad.")
     except Exception as e:
