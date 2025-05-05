@@ -1,8 +1,13 @@
+import time
+import pyautogui
+from pywinauto import Desktop
+
 def handle_notepad_if_opened(timeout=60):
     print("🔍 Checking if Notepad is open after ENTER...")
     notepad_window = None
     start_time = time.time()
 
+    # STEP 1: Wait for Notepad to open
     while notepad_window is None and (time.time() - start_time < timeout):
         try:
             windows = Desktop(backend="uia").windows()
@@ -13,35 +18,38 @@ def handle_notepad_if_opened(timeout=60):
                     break
         except Exception as e:
             print(f"Error finding Notepad: {e}")
-        time.sleep(5)
+        time.sleep(2)
 
     if notepad_window is None:
         print("✅ No Notepad opened.")
         return
 
     try:
-        time.sleep(2)  # Short wait for Notepad to fully load
+        # STEP 2: Activate the window and scroll down
+        notepad_window.set_focus()
+        time.sleep(1)
 
-        # Try to access the known auto_id for Notepad's edit box
-        try:
-            edit_box = notepad_window.child_window(auto_id="15", control_type="Edit")
-            text = edit_box.window_text()
-        except Exception:
-            # Fallback to descendants
-            edit_boxes = notepad_window.descendants(control_type="Edit")
-            if not edit_boxes:
-                print("⚠️ No editable text area found in Notepad.")
-                notepad_window.close()
-                print("✅ Closed Notepad.")
-                return
-            edit_box = edit_boxes[0]
-            text = edit_box.window_text()
+        print("⬇️ Scrolling to bottom of Notepad...")
+        pyautogui.hotkey('ctrl', 'end')  # Go to end of file
+        time.sleep(1)
 
-        lines = text.split("\n")
+        # STEP 3: Read from Notepad's edit box
+        edit_boxes = notepad_window.descendants(control_type="Edit")
+        if not edit_boxes:
+            print("⚠️ Could not find edit box in Notepad.")
+            return
+
+        edit_box = edit_boxes[0]
+        text = edit_box.window_text()
+
+        # STEP 4: Get and print last line
+        lines = text.strip().splitlines()
         last_line = lines[-1] if lines else "No error message found"
         print(f"📝 Last line in Notepad: {last_line}")
 
+        # STEP 5: Close Notepad
         notepad_window.close()
         print("✅ Closed Notepad.")
+
     except Exception as e:
-        print(f"❌ Error reading or closing Notepad: {e}")
+        print(f"❌ Error handling Notepad: {e}")
