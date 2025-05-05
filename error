@@ -24,22 +24,39 @@ def handle_notepad_errors_from_opened_window(timeout=60, save_file=True):
 
     try:
         notepad_window.set_focus()
+        time.sleep(1)
 
-        if save_file:
-            # Prepare log path and filename
-            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            folder_path = r'C:\log'
-            os.makedirs(folder_path, exist_ok=True)  # Ensure folder exists
-            full_path = os.path.join(folder_path, f'Failed_Logs_{timestamp}.txt')
+        # Select all and copy
+        pyautogui.hotkey('ctrl', 'a')
+        time.sleep(0.5)
+        pyautogui.hotkey('ctrl', 'c')
+        time.sleep(1)
 
-            print(f"💾 Saving Notepad file to: {full_path}")
-            pyautogui.hotkey('ctrl', 's')  # Open Save As dialog
-            time.sleep(1)
-            pyautogui.write(full_path)  # Type the full path
-            pyautogui.press('enter')
-            time.sleep(2)
+        # Read from clipboard
+        import pyperclip
+        text = pyperclip.paste()
 
+        if not text.strip():
+            print("⚠️ Copied text is empty.")
+        else:
+            print("📋 Copied text from Notepad:\n" + "-" * 40)
+            print(text)
+            print("-" * 40)
+
+            if save_file:
+                timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                folder_path = r'C:\log'
+                os.makedirs(folder_path, exist_ok=True)
+                file_path = os.path.join(folder_path, f'Failed_Logs_{timestamp}.txt')
+
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(text)
+
+                print(f"✅ Text saved to: {file_path}")
+
+        # Close Notepad
         notepad_window.close()
-        print("✅ Closed Notepad.")
+        print("✅ Notepad closed.")
+
     except Exception as e:
         print(f"❌ Error handling Notepad: {e}")
