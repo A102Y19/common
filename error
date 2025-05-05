@@ -1,48 +1,7 @@
-from pywinauto import Desktop
-import time
-import pyautogui
+import os
+from datetime import datetime
 
-def wait_for_update_installer_and_information():
-    print("🔍 Searching inside OMP for 'Update Installer'...")
-
-    omp_window = None
-    while omp_window is None:
-        try:
-            windows = Desktop(backend="uia").windows()
-            for win in windows:
-                if "OMP Data Change Manager" in win.window_text():
-                    omp_window = win
-                    print("✅ OMP Main window found.")
-                    break
-        except Exception as e:
-            print(f"Error finding main window: {e}")
-        time.sleep(5)
-
-    while True:
-        all_panes = omp_window.descendants(control_type="Pane")
-        for pane in all_panes:
-            if "Update Installer" in pane.window_text():
-                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
-                break
-        else:
-            time.sleep(10)
-            continue
-        break
-
-    print("🕒 Waiting for 'Information' pane every 60 seconds...")
-    while True:
-        all_panes = omp_window.descendants(control_type="Pane")
-        for pane in all_panes:
-            if "Information" in pane.window_text():
-                print(f"✅ Found 'Information' pane: {pane.window_text()}")
-                print("💡 Skipping text read. Sending ENTER to close popup.")
-                pyautogui.press('enter')
-                
-                handle_notepad_errors_from_opened_window()
-                return
-        time.sleep(60)
-
-def handle_notepad_errors_from_opened_window(timeout=60):
+def handle_notepad_errors_from_opened_window(timeout=60, save_file=True):
     print("🔍 Checking if Notepad is open after ENTER...")
     notepad_window = None
     start_time = time.time()
@@ -65,24 +24,22 @@ def handle_notepad_errors_from_opened_window(timeout=60):
 
     try:
         notepad_window.set_focus()
-        edit = notepad_window.child_window(class_name="Edit")
-        text = edit.window_text()
 
-        # Search all lines with 'error'
-        lines = text.strip().splitlines()
-        error_lines = [line for line in lines if "error" in line.lower()]
+        if save_file:
+            # Prepare log path and filename
+            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            folder_path = r'C:\log'
+            os.makedirs(folder_path, exist_ok=True)  # Ensure folder exists
+            full_path = os.path.join(folder_path, f'Failed_Logs_{timestamp}.txt')
 
-        if error_lines:
-            print("🛑 Error lines found in Notepad:")
-            for line in error_lines:
-                print(f"> {line}")
-        else:
-            print("✅ No error lines found in Notepad.")
+            print(f"💾 Saving Notepad file to: {full_path}")
+            pyautogui.hotkey('ctrl', 's')  # Open Save As dialog
+            time.sleep(1)
+            pyautogui.write(full_path)  # Type the full path
+            pyautogui.press('enter')
+            time.sleep(2)
 
         notepad_window.close()
         print("✅ Closed Notepad.")
     except Exception as e:
-        print(f"❌ Error accessing Notepad text: {e}")
-
-if __name__ == "__main__":
-    wait_for_update_installer_and_information()
+        print(f"❌ Error handling Notepad: {e}")
