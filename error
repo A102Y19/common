@@ -1,14 +1,14 @@
 from pywinauto import Desktop
 import time
 
-def handle_notepad_if_opened(timeout=60):
+def handle_notepad_errors_from_opened_window(timeout=60):
     print("🔍 Checking if Notepad is open after ENTER...")
     notepad_window = None
     start_time = time.time()
 
     while notepad_window is None and (time.time() - start_time < timeout):
         try:
-            windows = Desktop(backend="uia").windows()
+            windows = Desktop(backend="win32").windows()
             for win in windows:
                 if "Notepad" in win.window_text():
                     print("✅ Notepad window found.")
@@ -19,20 +19,18 @@ def handle_notepad_if_opened(timeout=60):
         time.sleep(3)
 
     if notepad_window is None:
-        print("✅ No Notepad opened.")
+        print("❌ Notepad not found.")
         return
 
     try:
-        print("🔍 Searching for Edit control...")
-        edit_controls = notepad_window.descendants(control_type="Edit")
-        if not edit_controls:
-            print("❌ Could not find Edit box in Notepad.")
-            return
+        notepad_window.set_focus()
+        edit = notepad_window.child_window(class_name="Edit")
+        text = edit.window_text()
 
-        text = edit_controls[0].window_text()
+        # Search all lines with 'error'
         lines = text.strip().splitlines()
-
         error_lines = [line for line in lines if "error" in line.lower()]
+
         if error_lines:
             print("🛑 Error lines found in Notepad:")
             for line in error_lines:
@@ -43,4 +41,4 @@ def handle_notepad_if_opened(timeout=60):
         notepad_window.close()
         print("✅ Closed Notepad.")
     except Exception as e:
-        print(f"❌ Error reading or closing Notepad: {e}")
+        print(f"❌ Error accessing Notepad text: {e}")
