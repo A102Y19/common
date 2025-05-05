@@ -1,3 +1,7 @@
+from pywinauto import Desktop
+import time
+import pyautogui
+
 def wait_for_update_installer_and_information():
     print("🔍 Searching inside OMP for 'Update Installer'...")
 
@@ -33,5 +37,38 @@ def wait_for_update_installer_and_information():
                 print(f"✅ Found 'Information' pane: {pane.window_text()}")
                 print("💡 Skipping text read. Sending ENTER to close popup.")
                 pyautogui.press('enter')
+                handle_notepad_if_opened()
                 return
         time.sleep(60)
+
+def handle_notepad_if_opened(timeout=60):
+    print("🔍 Checking if Notepad is open after ENTER...")
+    notepad_window = None
+    start_time = time.time()
+
+    while notepad_window is None and (time.time() - start_time < timeout):
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "Notepad" in win.window_text():
+                    notepad_window = win
+                    print("✅ Notepad window found.")
+                    break
+        except Exception as e:
+            print(f"Error finding Notepad: {e}")
+        time.sleep(5)
+
+    if notepad_window is None:
+        print("✅ No Notepad opened.")
+        return
+
+    try:
+        notepad_edit = notepad_window.child_window(control_type="Edit")
+        text = notepad_edit.window_text()
+        lines = text.split("\n")
+        last_line = lines[-1] if lines else "No error message found"
+        print(f"📝 Last line in Notepad: {last_line}")
+        notepad_window.close()
+        print("✅ Closed Notepad.")
+    except Exception as e:
+        print(f"❌ Error reading or closing Notepad: {e}")
