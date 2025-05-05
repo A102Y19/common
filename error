@@ -1,8 +1,545 @@
+import os
+import sys
+import time
+import logging
+import subprocess
+import pyautogui
+import pyperclip
+import pygetwindow as gw
+import pandas as pd
+import win32gui
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from pywinauto import Application, findwindows
+from pywinauto.keyboard import send_keys
+from dotenv import load_dotenv
+from pywinauto import Desktop
+
+# Get password from environment variable
+password = os.getenv("OMP_pass")
+if not password:
+    print("Error: Environment variable 'OMP_pass' not found!")
+    sys.exit(1)
+
+log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+
+def count_cmd_windows():
+    try:
+        return len([
+            w for w in findwindows.find_windows()
+            if "cmd.exe" in win32gui.GetWindowText(w).lower() or
+            "command prompt" in win32gui.GetWindowText(w).lower()
+        ])
+    except exceptions as e:
+        logging.error(f"Error counting CMD windows: {e}")
+        return 0
+
+
+def launching_OMP():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler(log_filename),
+            logging.StreamHandler()
+        ]
+    )
+
+    edge_options = webdriver.EdgeOptions()
+    edge_options.add_argument("--log-level=3")
+    edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+
+    driver = None
+
+    try:
+        logging.info("Starting Edge WebDriver...")
+        driver = webdriver.Edge(options=edge_options)
+
+        url = "https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx"
+        logging.info(f"Opening URL: {url}")
+        driver.get(url)
+
+        wait = WebDriverWait(driver, 10)
+
+        logging.info("Finding username and password fields...")
+        username_field = wait.until(EC.presence_of_element_located((By.ID, "DomainUserName")))
+        password_field = wait.until(EC.presence_of_element_located((By.ID, "UserPass")))
+
+        logging.info("Entering credentials...")
+        username_field.send_keys("NA\\gyellap1")
+        password_field.send_keys(password)
+
+        logging.info("Clicking the Sign In button...")
+        sign_in_button = wait.until(EC.element_to_be_clickable((By.ID, "btnSignIn")))
+        sign_in_button.click()
+
+        time.sleep(5)
+        logging.info("Login successful.")
+
+        logging.info("Clicking OMP OMEGA LAB INSTANCE button...")
+        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP OMEGA LAB INSTANCE')]")))
+        instance_button.click()
+
+        time.sleep(5)
+        download_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        rdp_file = None
+
+        for file in os.listdir(download_path):
+            if file.endswith(".rdp"):
+                rdp_file = os.path.join(download_path, file)
+                break
+
+        if not rdp_file:
+            logging.error("RDP file not found in downloads!")
+            exit(1)
+
+        logging.info(f"RDP file found: {rdp_file}")
+        time.sleep(15)
+
+        send_keys(password)
+        time.sleep(2)
+        send_keys("{ENTER}")
+        time.sleep(40)
+        send_keys("{ENTER}")
+        logging.info("Entered credentials, waiting for OMP to launch...")
+
+        omp_app = None
+        for _ in range(5):
+            try:
+                windows = findwindows.find_windows(title_re=".*OMP Plus.*", backend='win32')
+                if windows:
+                    omp_app = Application().connect(handle=windows[0])
+                    logging.info("OMP Plus application detected.")
+                    break
+            except Exception as e:
+                logging.info("OMP Plus not running yet, retrying...")
+            time.sleep(10)
+
+        if not omp_app:
+            logging.error("OMP Plus did not launch!")
+            exit(1)
+
+        return omp_app
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        if driver:
+            driver.quit()
+
+def stop_dispatcher(omp_app, dispatcher_path):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending W...")
+        omp_window.type_keys('W')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(10)
+
+        # Check if CMD opened
+        logging.info("Checking for CMD window...")
+        cmd_found = False
+        for _ in range(5):
+            try:
+                windows = findwindows.find_windows(title_re=".*Command Prompt.*", backend='win32')
+                if windows:
+                    logging.info("Command Prompt window found.")
+                    cmd_found = True
+                    break
+            except Exception:
+                pass
+            time.sleep(5)
+
+        if not cmd_found:
+            logging.error("Command Prompt window not found. Exiting.")
+            sys.exit(1)
+
+        # Send pushd <dispatcher_path> and execute stop command
+        logging.info(f"Sending pushd command to path: {dispatcher_path}")
+        send_keys(f'pushd {dispatcher_path}')
+        send_keys('{ENTER}')
+        time.sleep(2)
+        logging.info("Sending stop command...")
+        send_keys(r'DispatcherManagementAction.cmd{SPACE}stop{SPACE}/all')
+        send_keys('{ENTER}')
+        logging.info("Dispatcher stop command sent.")
+        time.sleep(30)
+
+        send_keys("^a")
+        time.sleep(1)
+        send_keys("^c")
+        time.sleep(1)
+        output = pyperclip.paste()
+        print("captured CMD output")
+
+        success_keywords = [
+            "success"
+        ]
+        if any(keyword in output.lower() for keyword in success_keywords):
+            print("Dispatcher stopped successfully")
+
+        else:
+            print("Dispatcher stop failed, Terminating script")
+            logging.error("Dispatcer stop failed!")
+            sys.exit(1)
+            
+    except Exception as e:
+        logging.error(f"Error in stop_dispatcher: {e}")
+    
+    finally:
+        logging.info("closing CMD window")
+        try:
+            send_keys('exit')
+            send_keys('{ENTER}')
+            logging.info(f"CMD closed successfully")
+            time.sleep(10)
+        except Exception as e:
+            logging.warning(f"Failed to close CMD: {e}")
+
+def base_solution_build(omp_app):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing Base solution Build.")
+        time.sleep(30)
+
+        logging.info("Checking for new Command Prompt window...")
+        window_found = False
+        for _ in range(3):
+            try:
+                windows = findwindows.find_windows(title_re=".*Command Prompt.*", backend='win32')
+                if windows:
+                    logging.info("New Command Prompt window detected.")
+                    window_found = True
+                    break
+            except Exception:
+                logging.info("Waiting for CMD window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("Command Prompt window not detected after base build. Exiting...")
+            sys.exit(1)
+   
+    except Exception as e:
+        logging.error(f"Error during Base Solution Build: {e}")
+
+def industry_solution_build(omp_app):
+    try:
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 3}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing Industry solution Build.")
+        time.sleep(10)
+
+        logging.info("Checking for new Command Prompt window...")
+        window_found = False
+        for _ in range(3):
+            try:
+                windows = findwindows.find_windows(title_re=".*Command Prompt.*", backend='win32')
+                if windows:
+                    logging.info("New Command Prompt window detected.")
+                    window_found = True
+                    break
+            except Exception:
+                logging.info("Waiting for CMD window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("Command Prompt window not detected after industry build. Exiting...")
+            sys.exit(1)
+
+    except Exception as e:
+        logging.error(f"Error during Industry Solution Build: {e}")
+
+
+def proejct_solution_build(omp_app):
+    try:
+
+        initial_cmd_count = count_cmd_windows()
+        logging.info(f"count: {initial_cmd_count}")
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 4}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing project solution Build.")
+        time.sleep(30)
+
+        logging.info("Checking for new Command Prompt window...")
+        window_found = False
+        for _ in range(6):
+            current_cmd_count = count_cmd_windows()
+            logging.info(f" current count: {current_cmd_count}")
+            
+            if current_cmd_count > initial_cmd_count:
+                logging.info(f"New Command Prompt window detected. Initial: {initial_cmd_count}, current: {current_cmd_count}")
+                window_found = True
+                break
+            else:
+                logging.info("Waiting for CMD window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("New Command Prompt window not detected after project build. Exiting...")
+            sys.exit(1)
+
+
+    except Exception as e:
+        logging.error(f"Error during project Solution Build: {e}")
+
+def select_build_option():
+    try:
+        time.sleep(5)
+        logging.info("Sending build option...")
+        send_keys("1")
+        time.sleep(1)
+        send_keys("{ENTER}")
+        logging.info("Build option 1 selected successfully.")
+
+        logging.info("Waiting for OMP Data Change Manager to launch...")
+        time.sleep(30)
+
+        # Check if 'OMP Data Change Manager' window opened
+        window_found = False
+        for _ in range(3):  # Retry a few times
+            try:
+                windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
+                if windows:
+                    logging.info("OMP Data Change Manager window detected.")
+                    window_found = True
+                    break
+                    time.sleep(20)
+            except Exception:
+                logging.info("Waiting for window...")
+            time.sleep(10)
+
+        if not window_found:
+            logging.error("OMP Data Change Manager did not open. Exiting...")
+            sys.exit(1)
+
+    except Exception as e:
+        logging.error(f"Error while selecting build option: {e}")
+
+def schema_pass():
+    load_dotenv("C:/PAK/.env")
+    
+    schema_keys = [
+        "OMP_JNJ_MD_OMEGA_LAB_OPR",
+        "OMP_JNJ_MD_OMEGA_LAB_SOP",
+        "OMP_JNJ_MD_OMEGA_LAB_FCT",
+        "OMP_JNJ_MD_OMEGA_LAB_UTL"
+    ]
+
+    for key in schema_keys:
+        schema_password = os.getenv(key)
+        if not schema_password:
+            print(f"password not found for {key}")
+            continue
+
+        time.sleep(10)
+        pyautogui.write(schema_password)
+        time.sleep(2)
+        pyautogui.press("enter")
+        print(f"Enterd password for {key}")
+    
+    time.sleep(15)
+    logging.info("Sending UP...")
+    send_keys("{UP 2}")
+    time.sleep(2)
+    logging.info("Sending ENTER...")
+    send_keys("{ENTER}")
+    time.sleep(2)
+    logging.info("sending TAB")
+    send_keys("{TAB}")
+    time.sleep(2)
+    logging.info("Sending ENTER...")
+    send_keys("{ENTER}")
+
+def wait_for_update_installer_and_information():
+    print("🔍 Searching inside OMP for 'Update Installer'...")
+
+    omp_window = None
+    while omp_window is None:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                if "OMP Data Change Manager" in win.window_text():
+                    omp_window = win
+                    print("✅ OMP Main window found.")
+                    break
+        except Exception as e:
+            print(f"Error finding main window: {e}")
+        time.sleep(5)
+
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
+            if "Update Installer" in pane.window_text():
+                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
+                break
+        else:
+            time.sleep(10)
+            continue
+        break
+
+    print("🕒 Waiting for 'Information' pane every 60 seconds...")
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
+            if "Information" in pane.window_text():
+                print(f"✅ Found 'Information' pane: {pane.window_text()}")
+                print("💡 Skipping text read. Sending ENTER to close popup.")
+                pyautogui.press('enter')
+                print("🔍 Checking if Notepad is open after ENTER...")
+
+                notepad_window = None
+                start_time = time.time()
+                timeout = 60  # <- define timeout here
+
+                while notepad_window is None and (time.time() - start_time < timeout):
+                    try:
+                        windows = Desktop(backend="uia").windows()
+                        for win in windows:
+                            if "Notepad" in win.window_text():
+                                notepad_window = win
+                                print("✅ Notepad window found.")
+                                handle_notepad_if_opened(notepad_window)
+                                return
+                    except Exception as e:
+                        print(f"Error finding Notepad: {e}")
+                    time.sleep(5)
+
+                print("Installation Completed Successfully.")
+                time.sleep(60)
+                return
+        time.sleep(60)
+
+def handle_notepad_if_opened(notepad_window):
+    try:
+        notepad_window.set_focus()
+        time.sleep(1)
+        pyautogui.hotkey("ctrl", "a")
+        time.sleep(1)
+        pyautogui.hotkey("ctrl", "c")
+        time.sleep(1)
+        copied_text = pyperclip.paste()
+
+        # Open a new Notepad
+        subprocess.Popen(["notepad.exe"])
+        time.sleep(2)
+        pyautogui.hotkey("ctrl", "v")
+        time.sleep(2)
+
+        # Save file in C:\log as failed_logs.txt
+        os.makedirs(r"C:\log", exist_ok=True)
+        pyautogui.hotkey("ctrl", "s")
+        time.sleep(2)
+        pyautogui.write(r"C:\log\failed_logs.txt")
+        time.sleep(2)
+        pyautogui.press("enter")
+        time.sleep(2)
+
+        print(" Installation gets failed Logs copied and saved to C:\\log\\failed_logs.txt")
+
+        # Close original Notepad
+        notepad_window.close()
+        print("✅ Closed original Notepad.")
+
+    except Exception as e:
+        print(f"❌ Error during Notepad copy/save: {e}")    
+
+#validate Version details
 def validate_version_details(file_path, expected_version):
     try:
         if not os.path.exists(file_path):
             print(f"[ERROR] File not found: {file_path}")
-            return
+            sys.exit(1)
 
         with open(file_path, 'r') as f:
             content = f.read()
@@ -11,12 +548,74 @@ def validate_version_details(file_path, expected_version):
             print(f"[SUCCESS] Version '{expected_version}' found in {file_path}")
         else:
             print(f"[ERROR] Version '{expected_version}' NOT found in {file_path}")
+            sys.exit(1)
 
     except Exception as e:
-        print(f"[EXCEPTION] Failed to validate version details: {str(e)}")
+        print(f"[EXCEPTION] Failed to validate version details: {str(e)}")    
+        sys.exit(1)
+
+def main_launcher():
+    excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
+    try:
+        df = pd.read_excel(excel_file, sheet_name=1)
+    except Exception as e:
+        print(f"Failed to load Excel: {e}")
+        return
+
+    omp_app = None
+    result = None
+
+    for index, row in df.iterrows():
+        action = str(row.iloc[0]).strip().lower()
+        requirement = str(row.iloc[1]).strip().upper()
+        inputs = str(row["Inputs"]).strip()
+
+        #print(f"Action: '{action}', Requirement: '{requirement}'")
+
+        if requirement == "Y":
+            if "launch omp" in action:
+                omp_app = launching_OMP()
+            elif "stop dispatcher" in action:
+                print("Executing stop dispatcher")
+                if omp_app:
+                    dispatcher_path = str(row.iloc[2]).strip()
+                    stop_dispatcher(omp_app, dispatcher_path)  
+            elif "base build" in action:
+                if omp_app:
+                    base_solution_build(omp_app)
+            elif "project build" in action:
+                if omp_app:
+                    proejct_solution_build(omp_app)
+            elif "industry build" in action:
+                if omp_app:
+                    industry_solution_build(omp_app)
+            elif "select build" in action:
+                select_build_option()
+            elif "schema pass" in action:
+                schema_pass()
+                wait_for_update_installer_and_information()
+
+                if result == True:
+                    print("Schema execution SUCCESS ")
+                elif result == False:
+                    print("Schema execution FAILED ")
+                else:
+                    print("Schema execution STATUS UNKNOWN ⚠️")
+
+            elif "validate version details" in action:
+                path, version = map(str.strip, inputs.split(','))
+                validate_version_details(path, version)
+
+            
+                 
+
+                
+            else:
+                print(f"Unknown action '{action}', skipping...")
+        else:
+            print(f"Skipping '{action}' as requirement is N")
 
 
-
-elif "validate version details" in action:
-    path, version = map(str.strip, inputs.split(','))
-    validate_version_details(path, version)
+if __name__ == "__main__":
+    main_launcher()
+    
