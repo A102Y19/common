@@ -1,28 +1,70 @@
-import os
+from pywinauto import Desktop
+import time
 import pyautogui
 import pyperclip
 import subprocess
+import os
 
-def handle_notepad_if_opened(timeout=60):
-    print("🔍 Checking if Notepad is open after ENTER...")
-    notepad_window = None
-    start_time = time.time()
+def wait_for_update_installer_and_information():
+    print("🔍 Searching inside OMP for 'Update Installer'...")
 
-    while notepad_window is None and (time.time() - start_time < timeout):
+    omp_window = None
+    while omp_window is None:
         try:
             windows = Desktop(backend="uia").windows()
             for win in windows:
-                if "Notepad" in win.window_text():
-                    notepad_window = win
-                    print("✅ Notepad window found.")
+                if "OMP Data Change Manager" in win.window_text():
+                    omp_window = win
+                    print("✅ OMP Main window found.")
                     break
         except Exception as e:
-            print(f"Error finding Notepad: {e}")
+            print(f"Error finding main window: {e}")
         time.sleep(5)
 
-    if notepad_window is None:
-        print("✅ No Notepad opened.")
-        return
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
+            if "Update Installer" in pane.window_text():
+                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
+                break
+        else:
+            time.sleep(10)
+            continue
+        break
+
+    print("🕒 Waiting for 'Information' pane every 60 seconds...")
+    while True:
+        all_panes = omp_window.descendants(control_type="Pane")
+        for pane in all_panes:
+            if "Information" in pane.window_text():
+                print(f"✅ Found 'Information' pane: {pane.window_text()}")
+                print("💡 Skipping text read. Sending ENTER to close popup.")
+                pyautogui.press('enter')
+                print("🔍 Checking if Notepad is open after ENTER...")
+				notepad_window = None
+				start_time = time.time()
+                
+				while notepad_window is None and (time.time() - start_time < timeout):
+					try:
+						windows = Desktop(backend="uia").windows()
+						for win in windows:
+							if "Notepad" in win.window_text():
+								notepad_window = win
+								print("✅ Notepad window found.")
+								handle_notepad_if_opened()
+					except Exception as e:
+						print(f"Error finding Notepad: {e}")
+					time.sleep(5)
+
+				if notepad_window is None:
+					print("✅ No Notepad opened.")
+					return
+		
+                handle_notepad_if_opened()
+                return
+        time.sleep(60)
+
+def handle_notepad_if_opened(timeout=60):
 
     # Bring Notepad to front and copy text
     try:
@@ -50,9 +92,14 @@ def handle_notepad_if_opened(timeout=60):
 
         print("✅ Logs copied and saved to C:\\log\\failed_logs.txt")
 
+
         # Close original Notepad
         notepad_window.close()
         print("✅ Closed original Notepad.")
 
     except Exception as e:
         print(f"❌ Error during Notepad copy/save: {e}")
+
+
+if __name__ == "__main__":
+    wait_for_update_installer_and_information()
