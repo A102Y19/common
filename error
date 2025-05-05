@@ -1,86 +1,26 @@
-🔍 Searching inside OMP for 'Update Installer'...
-✅ OMP Main window found.
-✅ Found 'Update Installer' pane: Update Installer (RDCBT.NA.JNJ.COM)
-🕒 Waiting for 'Information' pane every 60 seconds...
-✅ Found 'Information' pane: Information (RDCBT.NA.JNJ.COM)
-💡 Skipping text read. Sending ENTER to close popup.
+try:
+        time.sleep(2)  # Short wait for Notepad to fully load
 
-C:\Users\GYellap1>
-C:\Users\GYellap1>c:\PAK\test1.py
-2025-05-05 11:44:10,769 - INFO - Starting Edge WebDriver...
-2025-05-05 11:44:25,169 - INFO - Opening URL: https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx
-2025-05-05 11:44:30,521 - INFO - Finding username and password fields...
-2025-05-05 11:44:30,557 - INFO - Entering credentials...
-2025-05-05 11:44:30,719 - INFO - Clicking the Sign In button...
-2025-05-05 11:44:36,345 - INFO - Login successful.
-2025-05-05 11:44:36,366 - INFO - Clicking OMP OMEGA LAB INSTANCE button...
-2025-05-05 11:44:42,156 - INFO - RDP file found: C:\Users\GYellap1\Downloads\cpub-control-1C_ERP_VISION_TE-CmsRdsh.rdp
-2025-05-05 11:45:40,032 - INFO - Entered credentials, waiting for OMP to launch...
-Traceback (most recent call last):
-  File "C:\PAK\test1.py", line 574, in <module>
-    main_launcher()
-    ~~~~~~~~~~~~~^^
-  File "C:\PAK\test1.py", line 535, in main_launcher
-    omp_app = launching_OMP()
-  File "C:\PAK\test1.py", line 119, in launching_OMP
-    time.sleep(10)
-    ~~~~~~~~~~^^^^
-KeyboardInterrupt
-^C
-C:\Users\GYellap1>
-C:\Users\GYellap1>c:\PAK\test1.py
-2025-05-05 11:53:29,247 - INFO - Starting Edge WebDriver...
-2025-05-05 11:53:44,309 - INFO - Opening URL: https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx
-2025-05-05 11:53:47,834 - INFO - Finding username and password fields...
-2025-05-05 11:53:48,105 - INFO - Entering credentials...
-2025-05-05 11:53:48,364 - INFO - Clicking the Sign In button...
-2025-05-05 11:53:54,271 - INFO - Login successful.
-2025-05-05 11:53:54,274 - INFO - Clicking OMP OMEGA LAB INSTANCE button...
-2025-05-05 11:53:59,502 - INFO - RDP file found: C:\Users\GYellap1\Downloads\cpub-control-1C_ERP_VISION_TE-CmsRdsh.rdp
-2025-05-05 11:54:57,167 - INFO - Entered credentials, waiting for OMP to launch...
-2025-05-05 11:55:27,268 - INFO - OMP Plus application detected.
-Skipping 'stop dispatcher' as requirement is N
-Skipping 'base build' as requirement is N
-2025-05-05 11:55:27,270 - INFO - count: 1
-2025-05-05 11:55:28,274 - INFO - Sending Alt + U...
-2025-05-05 11:55:30,309 - INFO - Sending C...
-2025-05-05 11:55:32,321 - INFO - Sending U...
-2025-05-05 11:55:34,333 - INFO - Sending LEFT...
-2025-05-05 11:55:36,385 - INFO - Sending DOWN...
-2025-05-05 11:55:38,489 - INFO - Sending ENTER...
-2025-05-05 11:55:40,545 - INFO - Sending DOWN...
-2025-05-05 11:55:42,750 - INFO - Sending ENTER...
-2025-05-05 11:55:42,802 - INFO - Initiated Installing project solution Build.
-2025-05-05 11:56:12,803 - INFO - Checking for new Command Prompt window...
-2025-05-05 11:56:12,805 - INFO -  current count: 2
-2025-05-05 11:56:12,805 - INFO - New Command Prompt window detected. Initial: 1, current: 2
-Skipping 'industry build' as requirement is N
-2025-05-05 11:56:17,807 - INFO - Sending build option...
-2025-05-05 11:56:18,909 - INFO - Build option 1 selected successfully.
-2025-05-05 11:56:18,910 - INFO - Waiting for OMP Data Change Manager to launch...
-2025-05-05 11:56:48,939 - INFO - OMP Data Change Manager window detected.
-Enterd password for OMP_JNJ_MD_OMEGA_LAB_OPR
-Enterd password for OMP_JNJ_MD_OMEGA_LAB_SOP
-Enterd password for OMP_JNJ_MD_OMEGA_LAB_FCT
-Enterd password for OMP_JNJ_MD_OMEGA_LAB_UTL
-2025-05-05 11:57:52,835 - INFO - Sending UP...
-2025-05-05 11:57:54,938 - INFO - Sending ENTER...
-2025-05-05 11:57:56,990 - INFO - sending TAB
-2025-05-05 11:57:59,041 - INFO - Sending ENTER...
-🔍 Searching inside OMP for 'Update Installer'...
-✅ OMP Main window found.
-✅ Found 'Update Installer' pane: Update Installer (RDCBT.NA.JNJ.COM)
-🕒 Waiting for 'Information' pane every 60 seconds...
-✅ Found 'Information' pane: Information (RDCBT.NA.JNJ.COM)
-💡 Skipping text read. Sending ENTER to close popup.
-🔍 Checking if Notepad is open after ENTER...
-✅ Notepad window found.
-❌ Error reading or closing Notepad: 'UIAWrapper' object has no attribute 'child_window'
-Traceback (most recent call last):
-  File "C:\PAK\test1.py", line 574, in <module>
-    main_launcher()
-    ~~~~~~~~~~~~~^^
-  File "C:\PAK\test1.py", line 556, in main_launcher
-    if result == True:
-       ^^^^^^
-NameError: name 'result' is not defined
+        # Try to access the known auto_id for Notepad's edit box
+        try:
+            edit_box = notepad_window.child_window(auto_id="15", control_type="Edit")
+            text = edit_box.window_text()
+        except Exception:
+            # Fallback to descendants
+            edit_boxes = notepad_window.descendants(control_type="Edit")
+            if not edit_boxes:
+                print("⚠️ No editable text area found in Notepad.")
+                notepad_window.close()
+                print("✅ Closed Notepad.")
+                return
+            edit_box = edit_boxes[0]
+            text = edit_box.window_text()
+
+        lines = text.split("\n")
+        last_line = lines[-1] if lines else "No error message found"
+        print(f"📝 Last line in Notepad: {last_line}")
+
+        notepad_window.close()
+        print("✅ Closed Notepad.")
+    except Exception as e:
+        print(f"❌ Error reading or closing Notepad: {e}")
