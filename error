@@ -1,62 +1,58 @@
 import os
-from datetime import datetime
+import pyautogui
+import pyperclip
+import subprocess
 
-def handle_notepad_errors_from_opened_window(timeout=60, save_file=True):
+def handle_notepad_if_opened(timeout=60):
     print("🔍 Checking if Notepad is open after ENTER...")
     notepad_window = None
     start_time = time.time()
 
     while notepad_window is None and (time.time() - start_time < timeout):
         try:
-            windows = Desktop(backend="win32").windows()
+            windows = Desktop(backend="uia").windows()
             for win in windows:
                 if "Notepad" in win.window_text():
-                    print("✅ Notepad window found.")
                     notepad_window = win
+                    print("✅ Notepad window found.")
                     break
         except Exception as e:
             print(f"Error finding Notepad: {e}")
-        time.sleep(3)
+        time.sleep(5)
 
     if notepad_window is None:
-        print("❌ Notepad not found.")
+        print("✅ No Notepad opened.")
         return
 
+    # Bring Notepad to front and copy text
     try:
         notepad_window.set_focus()
         time.sleep(1)
-
-        # Select all and copy
-        pyautogui.hotkey('ctrl', 'a')
+        pyautogui.hotkey("ctrl", "a")
         time.sleep(0.5)
-        pyautogui.hotkey('ctrl', 'c')
+        pyautogui.hotkey("ctrl", "c")
+        time.sleep(1)
+        copied_text = pyperclip.paste()
+
+        # Open a new Notepad
+        subprocess.Popen(["notepad.exe"])
+        time.sleep(2)
+        pyautogui.hotkey("ctrl", "v")
         time.sleep(1)
 
-        # Read from clipboard
-        import pyperclip
-        text = pyperclip.paste()
+        # Save file in C:\log as failed_logs.txt
+        os.makedirs(r"C:\log", exist_ok=True)
+        pyautogui.hotkey("ctrl", "s")
+        time.sleep(1)
+        pyautogui.write(r"C:\log\failed_logs.txt")
+        pyautogui.press("enter")
+        time.sleep(1)
 
-        if not text.strip():
-            print("⚠️ Copied text is empty.")
-        else:
-            print("📋 Copied text from Notepad:\n" + "-" * 40)
-            print(text)
-            print("-" * 40)
+        print("✅ Logs copied and saved to C:\\log\\failed_logs.txt")
 
-            if save_file:
-                timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                folder_path = r'C:\log'
-                os.makedirs(folder_path, exist_ok=True)
-                file_path = os.path.join(folder_path, f'Failed_Logs_{timestamp}.txt')
-
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(text)
-
-                print(f"✅ Text saved to: {file_path}")
-
-        # Close Notepad
+        # Close original Notepad
         notepad_window.close()
-        print("✅ Notepad closed.")
+        print("✅ Closed original Notepad.")
 
     except Exception as e:
-        print(f"❌ Error handling Notepad: {e}")
+        print(f"❌ Error during Notepad copy/save: {e}")
