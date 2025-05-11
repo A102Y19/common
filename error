@@ -19,12 +19,21 @@ from dotenv import load_dotenv
 from pywinauto import Desktop
 
 # Get password from environment variable
-password = os.getenv("OMP_pass")
-if not password:
-    print("Error: Environment variable 'OMP_pass' not found!")
-    sys.exit(1)
+#password = os.getenv("OMP_pass")
+#if not password:
+#    logging.error("Error: Environment variable 'OMP_pass' not found!")
+#    sys.exit(1)
 
-log_filename = "C:/DeployAgent/log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+log_filename = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\log\log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename),
+        logging.StreamHandler()
+    ]
+)
 
 def count_cmd_windows():
     try:
@@ -33,101 +42,46 @@ def count_cmd_windows():
             if "cmd.exe" in win32gui.GetWindowText(w).lower() or
             "command prompt" in win32gui.GetWindowText(w).lower()
         ])
-    except exceptions as e:
+    except exception as e:
         logging.error(f"Error counting CMD windows: {e}")
         return 0
 
 
 def launching_OMP():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(log_filename),
-            logging.StreamHandler()
-        ]
-    )
-
-    edge_options = webdriver.EdgeOptions()
-    edge_options.add_argument("--log-level=3")
-    edge_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    driver = None
+    script_path = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\bin\OMPartners_menu.cmd"  # Replace with actual script name
 
     try:
-        logging.info("Starting Edge WebDriver...")
-        driver = webdriver.Edge(options=edge_options)
+        if os.path.exists(script_path):
+            # Try launching the script
+            logging.info(f"Launching OMP application from: {script_path}")
+            subprocess.Popen(script_path, shell=True)
+            
+            logging.info("OMP application launch Initiated.")
+            time.sleep(20)
+        
+            
 
-        url = "https://rdwatest.na.jnj.com/RDWeb/Pages/en-US/login.aspx"
-        logging.info(f"Opening URL: {url}")
-        driver.get(url)
+            # Check if OMP Plus is already running
+            omp_app = None
+            for _ in range(5):
+                try:
+                    windows = findwindows.find_windows(title_re=".*OMP Plus.*", backend='win32')
+                    if windows:
+                        omp_app = Application().connect(handle=windows[0])
+                        logging.info("OMP Plus application detected.")
+                        break
+                except Exception as e:
+                    logging.info("OMP Plus not running yet, retrying...")
+                time.sleep(10)
 
-        wait = WebDriverWait(driver, 10)
+            if not omp_app:
+                logging.error("OMP Plus did not launch!")
+                exit(1)
 
-        logging.info("Finding username and password fields...")
-        username_field = wait.until(EC.presence_of_element_located((By.ID, "DomainUserName")))
-        password_field = wait.until(EC.presence_of_element_located((By.ID, "UserPass")))
-
-        logging.info("Entering credentials...")
-        username_field.send_keys("NA\\gyellap1")
-        password_field.send_keys(password)
-
-        logging.info("Clicking the Sign In button...")
-        sign_in_button = wait.until(EC.element_to_be_clickable((By.ID, "btnSignIn")))
-        sign_in_button.click()
-
-        time.sleep(5)
-        logging.info("Login successful.")
-
-        logging.info("Clicking OMP OMEGA LAB INSTANCE button...")
-        instance_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'OMP OMEGA LAB INSTANCE')]")))
-        instance_button.click()
-
-        time.sleep(5)
-        download_path = os.path.join(os.path.expanduser("~"), "Downloads")
-        rdp_file = None
-
-        for file in os.listdir(download_path):
-            if file.endswith(".rdp"):
-                rdp_file = os.path.join(download_path, file)
-                break
-
-        if not rdp_file:
-            logging.error("RDP file not found in downloads!")
-            exit(1)
-
-        logging.info(f"RDP file found: {rdp_file}")
-        time.sleep(15)
-
-        send_keys(password)
-        time.sleep(2)
-        send_keys("{ENTER}")
-        time.sleep(40)
-        send_keys("{ENTER}")
-        logging.info("Entered credentials, waiting for OMP to launch...")
-
-        omp_app = None
-        for _ in range(5):
-            try:
-                windows = findwindows.find_windows(title_re=".*OMP Plus.*", backend='win32')
-                if windows:
-                    omp_app = Application().connect(handle=windows[0])
-                    logging.info("OMP Plus application detected.")
-                    break
-            except Exception as e:
-                logging.info("OMP Plus not running yet, retrying...")
-            time.sleep(10)
-
-        if not omp_app:
-            logging.error("OMP Plus did not launch!")
-            exit(1)
-
-        return omp_app
+            return omp_app
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-        if driver:
-            driver.quit()
 
 def stop_dispatcher(omp_app, dispatcher_path):
     try:
@@ -185,16 +139,16 @@ def stop_dispatcher(omp_app, dispatcher_path):
         send_keys("^c")
         time.sleep(1)
         output = pyperclip.paste()
-        print("captured CMD output")
+        logging.info("captured CMD output")
 
         success_keywords = [
             "success"
         ]
         if any(keyword in output.lower() for keyword in success_keywords):
-            print("Dispatcher stopped successfully")
+            logging.info("Dispatcher stopped successfully")
 
         else:
-            print("Dispatcher stop failed, Terminating script")
+            logging.info("Dispatcher stop failed, Terminating script")
             logging.error("Dispatcer stop failed!")
             sys.exit(1)
             
@@ -377,8 +331,8 @@ def select_build_option():
     try:
         time.sleep(5)
         logging.info("Sending build option...")
-        send_keys("1")
-        time.sleep(1)
+        send_keys("2")
+        time.sleep(2)
         send_keys("{ENTER}")
         logging.info("Build option 1 selected successfully.")
 
@@ -407,7 +361,7 @@ def select_build_option():
         logging.error(f"Error while selecting build option: {e}")
 
 def schema_pass():
-    load_dotenv("C:/PAK/.env")
+    load_dotenv(r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\.env")
     
     schema_keys = [
         "OMP_JNJ_MD_OMEGA_LAB_OPR",
@@ -419,14 +373,14 @@ def schema_pass():
     for key in schema_keys:
         schema_password = os.getenv(key)
         if not schema_password:
-            print(f"password not found for {key}")
+            logging.info(f"password not found for {key}")
             continue
 
         time.sleep(10)
         pyautogui.write(schema_password)
         time.sleep(2)
         pyautogui.press("enter")
-        print(f"Enterd password for {key}")
+        logging.info(f"Enterd password for {key}")
     
     time.sleep(15)
     logging.info("Sending UP...")
@@ -442,7 +396,7 @@ def schema_pass():
     send_keys("{ENTER}")
 
 def wait_for_update_installer_and_information():
-    print("🔍 Searching inside OMP for 'Update Installer'...")
+    logging.info(" Searching inside OMP for 'Update Installer'...")
 
     omp_window = None
     while omp_window is None:
@@ -451,32 +405,32 @@ def wait_for_update_installer_and_information():
             for win in windows:
                 if "OMP Data Change Manager" in win.window_text():
                     omp_window = win
-                    print("✅ OMP Main window found.")
+                    logging.info(" OMP Main window found.")
                     break
         except Exception as e:
-            print(f"Error finding main window: {e}")
+            logging.error(f"Error finding main window: {e}")
         time.sleep(5)
 
     while True:
         all_panes = omp_window.descendants(control_type="Pane")
         for pane in all_panes:
             if "Update Installer" in pane.window_text():
-                print(f"✅ Found 'Update Installer' pane: {pane.window_text()}")
+                logging.info(f" Found 'Update Installer' pane: {pane.window_text()}")
                 break
         else:
             time.sleep(10)
             continue
         break
 
-    print("🕒 Waiting for 'Information' pane every 60 seconds...")
+    logging.info(" Waiting for 'Information' pane every 60 seconds...")
     while True:
         all_panes = omp_window.descendants(control_type="Pane")
         for pane in all_panes:
             if "Information" in pane.window_text():
-                print(f"✅ Found 'Information' pane: {pane.window_text()}")
-                print("💡 Skipping text read. Sending ENTER to close popup.")
+                logging.info(f" Found 'Information' pane: {pane.window_text()}")
+                logging.info(" Skipping text read. Sending ENTER to close popup.")
                 pyautogui.press('enter')
-                print("🔍 Checking if Notepad is open after ENTER...")
+                logging.info(" Checking if Notepad is open after ENTER...")
 
                 notepad_window = None
                 start_time = time.time()
@@ -488,14 +442,14 @@ def wait_for_update_installer_and_information():
                         for win in windows:
                             if "Notepad" in win.window_text():
                                 notepad_window = win
-                                print("✅ Notepad window found.")
+                                logging.info(" Notepad window found.")
                                 handle_notepad_if_opened(notepad_window)
                                 return
                     except Exception as e:
-                        print(f"Error finding Notepad: {e}")
+                        logging.error(f"Error finding Notepad: {e}")
                     time.sleep(5)
 
-                print("Installation Completed Successfully.")
+                logging.info("Installation Completed Successfully.")
                 time.sleep(60)
                 return
         time.sleep(60)
@@ -516,50 +470,50 @@ def handle_notepad_if_opened(notepad_window):
         pyautogui.hotkey("ctrl", "v")
         time.sleep(2)
 
-        # Save file in C:\log as failed_logs.txt
-        os.makedirs(r"C:\log", exist_ok=True)
+        # Save file in log as failed_logs.txt
+        os.makedirs(r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\log", exist_ok=True)
         pyautogui.hotkey("ctrl", "s")
         time.sleep(2)
-        pyautogui.write(r"C:\log\failed_logs.txt")
+        pyautogui.write(r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\log\failed_logs.txt")
         time.sleep(2)
         pyautogui.press("enter")
         time.sleep(2)
 
-        print(" Installation gets failed Logs copied and saved to C:\\log\\failed_logs.txt")
+        logging.info(r" Installation gets failed Logs copied and saved to \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\log\failed_logs.txt")
 
         # Close original Notepad
         notepad_window.close()
-        print("✅ Closed original Notepad.")
+        logging.info(" Closed original Notepad.")
 
     except Exception as e:
-        print(f"❌ Error during Notepad copy/save: {e}")    
+        logging.error(f" Error during Notepad copy/save: {e}")    
 
 #validate Version details
 def validate_version_details(file_path, expected_version):
     try:
         if not os.path.exists(file_path):
-            print(f"[ERROR] File not found: {file_path}")
+            logging.error(f"[ERROR] File not found: {file_path}")
             sys.exit(1)
 
         with open(file_path, 'r') as f:
             content = f.read()
 
         if expected_version in content:
-            print(f"[SUCCESS] Version '{expected_version}' found in {file_path}")
+            logging.info(f"[SUCCESS] Version '{expected_version}' found in {file_path}")
         else:
-            print(f"[ERROR] Version '{expected_version}' NOT found in {file_path}")
+            logging.info(f"[ERROR] Version '{expected_version}' NOT found in {file_path}")
             sys.exit(1)
 
     except Exception as e:
-        print(f"[EXCEPTION] Failed to validate version details: {str(e)}")    
+        logging.info(f"[EXCEPTION] Failed to validate version details: {str(e)}")    
         sys.exit(1)
 
 def main_launcher():
-    excel_file = "C:/PAK/PAK_Standard_requirement.xlsx"
+    excel_file = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\PAK_Standard_requirement.xlsx"
     try:
         df = pd.read_excel(excel_file, sheet_name=1)
     except Exception as e:
-        print(f"Failed to load Excel: {e}")
+        logging.info(f"Failed to load Excel: {e}")
         return
 
     omp_app = None
@@ -576,7 +530,7 @@ def main_launcher():
             if "launch omp" in action:
                 omp_app = launching_OMP()
             elif "stop dispatcher" in action:
-                print("Executing stop dispatcher")
+                logging.info("Executing stop dispatcher")
                 if omp_app:
                     dispatcher_path = str(row.iloc[2]).strip()
                     stop_dispatcher(omp_app, dispatcher_path)  
@@ -596,11 +550,11 @@ def main_launcher():
                 wait_for_update_installer_and_information()
 
                 if result == True:
-                    print("Schema execution SUCCESS ")
+                    logging.info("Schema execution SUCCESS ")
                 elif result == False:
-                    print("Schema execution FAILED ")
+                    logging.info("Schema execution FAILED ")
                 else:
-                    print("Schema execution STATUS UNKNOWN ⚠️")
+                    logging.info("Schema execution STATUS UNKNOWN ")
 
             elif "validate version details" in action:
                 path, version = map(str.strip, inputs.split(','))
@@ -611,9 +565,9 @@ def main_launcher():
 
                 
             else:
-                print(f"Unknown action '{action}', skipping...")
+                logging.info(f"Unknown action '{action}', skipping...")
         else:
-            print(f"Skipping '{action}' as requirement is N")
+            logging.info(f"Skipping '{action}' as requirement is N")
 
 
 if __name__ == "__main__":
