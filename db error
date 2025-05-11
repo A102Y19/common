@@ -1,11 +1,100 @@
-2025-05-11 18:59:44,428 - INFO -  Searching inside OMP for 'Update Installer'...
-2025-05-11 18:59:44,544 - INFO - Window found: Taskbar
-2025-05-11 18:59:44,545 - INFO - Window found: OMP Data Change Manager - DATA CHANGE MANAGEMENT - [DCMTableChanges]
-2025-05-11 18:59:44,546 - INFO -  OMP Main window found.
-2025-05-11 18:59:49,613 - INFO - [DEBUG] Type: Window, ID: , Name: Update Installer, Text: Update Installer
-2025-05-11 18:59:49,613 - INFO -  Found 'Update Installer' - Name: Update Installer, Text: Update Installer
-2025-05-11 18:59:49,614 - INFO -  Waiting for 'Information' popup every 60 seconds...
-2025-05-11 18:59:49,676 - INFO -  Found 'Information' pane: Information
-2025-05-11 18:59:49,777 - INFO - ENTER sent to close popup. Checking for Notepad...
-2025-05-11 18:59:49,826 - INFO -  Notepad window found.
-2025-05-11 18:59:53,029 - INFO - Notepad content saved and closed.
+import time
+import logging
+import pyautogui
+from pywinauto import Desktop
+
+# Optional: Notepad handler if needed
+def handle_notepad_if_opened(notepad_window):
+    try:
+        notepad_window.set_focus()
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 's')  # Save the file
+        time.sleep(2)
+        pyautogui.press('enter')       # Confirm save
+        logging.info("Notepad content saved and closed.")
+        notepad_window.close()
+    except Exception as e:
+        logging.error(f"Error handling Notepad: {e}")
+
+def wait_for_update_installer_and_information():
+    logging.info("🔍 Searching inside OMP for 'Update Installer'...")
+
+    omp_window = None
+    while omp_window is None:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                logging.info(f"Window found: {win.window_text()}")
+                if "OMP Data Change Manager" in win.window_text():
+                    omp_window = win
+                    logging.info("✅ OMP Main window found.")
+                    break
+        except Exception as e:
+            logging.error(f"❌ Error finding main window: {e}")
+        time.sleep(5)
+
+    # 🔍 Check for Update Installer pane
+    while True:
+        all_panes = omp_window.descendants()
+        for pane in all_panes:
+            try:
+                ctrl_type = pane.element_info.control_type
+                auto_id = pane.element_info.automation_id
+                name = pane.element_info.name
+                text = pane.window_text()
+                logging.info(f"[DEBUG] Type: {ctrl_type}, ID: {auto_id}, Name: {name}, Text: {text}")
+
+                if "Update Installer" in text or "Update Installer" in name:
+                    logging.info(f"✅ Found 'Update Installer' - Name: {name}, Text: {text}")
+                    break
+            except Exception as e:
+                logging.error(f"[DEBUG] Failed to get pane info: {e}")
+        else:
+            logging.info("Waiting 10 seconds before checking 'Update Installer' again...")
+            time.sleep(10)
+            continue
+        break
+
+    # 🕒 Wait for 'Information' popup and close it
+    logging.info("⏳ Waiting for 'Information' popup every 60 seconds...")
+    while True:
+        all_panes = omp_window.descendants()
+        for pane in all_panes:
+            try:
+                name = pane.element_info.name
+                text = pane.window_text()
+                if "Information" in name or "Information" in text:
+                    logging.info(f"ℹ️ Found 'Information' pane: {text}")
+                    pyautogui.press('enter')
+                    logging.info("ENTER sent to close popup. Checking for Notepad...")
+
+                    notepad_window = None
+                    start_time = time.time()
+                    timeout = 60
+
+                    while notepad_window is None and (time.time() - start_time < timeout):
+                        try:
+                            windows = Desktop(backend="uia").windows()
+                            for win in windows:
+                                if "Notepad" in win.window_text():
+                                    notepad_window = win
+                                    logging.info("📝 Notepad window found.")
+                                    handle_notepad_if_opened(notepad_window)
+                                    return
+                        except Exception as e:
+                            logging.error(f"Error checking Notepad: {e}")
+                        time.sleep(5)
+
+                    logging.info("✅ Installation completed successfully. No Notepad found.")
+                    return
+            except Exception as e:
+                logging.error(f"Error while checking Information popup: {e}")
+        time.sleep(60)
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.FileHandler("omp_update_log.txt"), logging.StreamHandler()]
+    )
+    wait_for_update_installer_and_information()
