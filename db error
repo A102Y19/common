@@ -1,40 +1,100 @@
-2025-05-11 18:32:35,306 - INFO - Searching inside OMP for 'Update Installer'...
-2025-05-11 18:33:15,944 - INFO - Window found: Taskbar
-2025-05-11 18:33:18,190 - INFO - Window found: OMP Data Change Manager - DATA CHANGE MANAGEMENT - [DCMTableChanges]
-2025-05-11 18:33:19,588 - INFO - OMP Main window found.
-2025-05-11 18:35:12,761 - INFO - Checking pane: 
-2025-05-11 18:35:12,767 - INFO - Checking pane: 
-2025-05-11 18:35:12,770 - INFO - Checking pane: In Progress...
-2025-05-11 18:35:12,772 - INFO - Checking pane: 
-2025-05-11 18:35:12,775 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,777 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,782 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,784 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,788 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,790 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,794 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,798 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,800 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,803 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,806 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,808 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,812 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,817 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,820 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,823 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,826 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,829 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,834 - INFO - Checking pane: ompeditor_06_09_024_x64u
-2025-05-11 18:35:12,836 - INFO - Checking pane: 
-2025-05-11 18:35:12,839 - INFO - Checking pane: System
-2025-05-11 18:35:12,841 - INFO - Checking pane: System
-2025-05-11 18:35:12,844 - INFO - Checking pane: Minimize
-2025-05-11 18:35:12,846 - INFO - Checking pane: Maximize
-2025-05-11 18:35:12,848 - INFO - Checking pane: Close
-2025-05-11 18:35:22,912 - INFO - Checking pane: In Progress...
-2025-05-11 18:35:22,916 - INFO - Checking pane: Information
-2025-05-11 18:35:22,918 - INFO - Checking pane: 
-2025-05-11 18:35:22,919 - INFO - Checking pane: System
-2025-05-11 18:35:22,920 - INFO - Checking pane: System
-2025-05-11 18:35:22,921 - INFO - Checking pane: Close
-2025-05-11 18:35:22,922 - INFO - Checking pane: 
+import time
+import logging
+import pyautogui
+from pywinauto import Desktop
+
+# Optional: Notepad handler if needed
+def handle_notepad_if_opened(notepad_window):
+    try:
+        notepad_window.set_focus()
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 's')  # Save the file
+        time.sleep(2)
+        pyautogui.press('enter')       # Confirm save
+        logging.info("Notepad content saved and closed.")
+        notepad_window.close()
+    except Exception as e:
+        logging.error(f"Error handling Notepad: {e}")
+
+def wait_for_update_installer_and_information():
+    logging.info("🔍 Searching inside OMP for 'Update Installer'...")
+
+    omp_window = None
+    while omp_window is None:
+        try:
+            windows = Desktop(backend="uia").windows()
+            for win in windows:
+                logging.info(f"Window found: {win.window_text()}")
+                if "OMP Data Change Manager" in win.window_text():
+                    omp_window = win
+                    logging.info("✅ OMP Main window found.")
+                    break
+        except Exception as e:
+            logging.error(f"❌ Error finding main window: {e}")
+        time.sleep(5)
+
+    # 🔍 Check for Update Installer pane
+    while True:
+        all_panes = omp_window.descendants()
+        for pane in all_panes:
+            try:
+                ctrl_type = pane.element_info.control_type
+                auto_id = pane.element_info.automation_id
+                name = pane.element_info.name
+                text = pane.window_text()
+                logging.info(f"[DEBUG] Type: {ctrl_type}, ID: {auto_id}, Name: {name}, Text: {text}")
+
+                if "Update Installer" in text or "Update Installer" in name:
+                    logging.info(f"✅ Found 'Update Installer' - Name: {name}, Text: {text}")
+                    break
+            except Exception as e:
+                logging.error(f"[DEBUG] Failed to get pane info: {e}")
+        else:
+            logging.info("Waiting 10 seconds before checking 'Update Installer' again...")
+            time.sleep(10)
+            continue
+        break
+
+    # 🕒 Wait for 'Information' popup and close it
+    logging.info("⏳ Waiting for 'Information' popup every 60 seconds...")
+    while True:
+        all_panes = omp_window.descendants()
+        for pane in all_panes:
+            try:
+                name = pane.element_info.name
+                text = pane.window_text()
+                if "Information" in name or "Information" in text:
+                    logging.info(f"ℹ️ Found 'Information' pane: {text}")
+                    pyautogui.press('enter')
+                    logging.info("ENTER sent to close popup. Checking for Notepad...")
+
+                    notepad_window = None
+                    start_time = time.time()
+                    timeout = 60
+
+                    while notepad_window is None and (time.time() - start_time < timeout):
+                        try:
+                            windows = Desktop(backend="uia").windows()
+                            for win in windows:
+                                if "Notepad" in win.window_text():
+                                    notepad_window = win
+                                    logging.info("📝 Notepad window found.")
+                                    handle_notepad_if_opened(notepad_window)
+                                    return
+                        except Exception as e:
+                            logging.error(f"Error checking Notepad: {e}")
+                        time.sleep(5)
+
+                    logging.info("✅ Installation completed successfully. No Notepad found.")
+                    return
+            except Exception as e:
+                logging.error(f"Error while checking Information popup: {e}")
+        time.sleep(60)
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.FileHandler("omp_update_log.txt"), logging.StreamHandler()]
+    )
+    wait_for_update_installer_and_information()
