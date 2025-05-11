@@ -1,100 +1,108 @@
-import time
-import logging
-import pyautogui
-from pywinauto import Desktop
-
-# Optional: Notepad handler if needed
-def handle_notepad_if_opened(notepad_window):
-    try:
-        notepad_window.set_focus()
-        time.sleep(1)
-        pyautogui.hotkey('ctrl', 's')  # Save the file
-        time.sleep(2)
-        pyautogui.press('enter')       # Confirm save
-        logging.info("Notepad content saved and closed.")
-        notepad_window.close()
-    except Exception as e:
-        logging.error(f"Error handling Notepad: {e}")
-
-def wait_for_update_installer_and_information():
-    logging.info("🔍 Searching inside OMP for 'Update Installer'...")
-
-    omp_window = None
-    while omp_window is None:
-        try:
-            windows = Desktop(backend="uia").windows()
-            for win in windows:
-                logging.info(f"Window found: {win.window_text()}")
-                if "OMP Data Change Manager" in win.window_text():
-                    omp_window = win
-                    logging.info("✅ OMP Main window found.")
-                    break
-        except Exception as e:
-            logging.error(f"❌ Error finding main window: {e}")
-        time.sleep(5)
-
-    # 🔍 Check for Update Installer pane
-    while True:
-        all_panes = omp_window.descendants()
-        for pane in all_panes:
-            try:
-                ctrl_type = pane.element_info.control_type
-                auto_id = pane.element_info.automation_id
-                name = pane.element_info.name
-                text = pane.window_text()
-                logging.info(f"[DEBUG] Type: {ctrl_type}, ID: {auto_id}, Name: {name}, Text: {text}")
-
-                if "Update Installer" in text or "Update Installer" in name:
-                    logging.info(f"✅ Found 'Update Installer' - Name: {name}, Text: {text}")
-                    break
-            except Exception as e:
-                logging.error(f"[DEBUG] Failed to get pane info: {e}")
-        else:
-            logging.info("Waiting 10 seconds before checking 'Update Installer' again...")
-            time.sleep(10)
-            continue
-        break
-
-    # 🕒 Wait for 'Information' popup and close it
-    logging.info("⏳ Waiting for 'Information' popup every 60 seconds...")
-    while True:
-        all_panes = omp_window.descendants()
-        for pane in all_panes:
-            try:
-                name = pane.element_info.name
-                text = pane.window_text()
-                if "Information" in name or "Information" in text:
-                    logging.info(f"ℹ️ Found 'Information' pane: {text}")
-                    pyautogui.press('enter')
-                    logging.info("ENTER sent to close popup. Checking for Notepad...")
-
-                    notepad_window = None
-                    start_time = time.time()
-                    timeout = 60
-
-                    while notepad_window is None and (time.time() - start_time < timeout):
-                        try:
-                            windows = Desktop(backend="uia").windows()
-                            for win in windows:
-                                if "Notepad" in win.window_text():
-                                    notepad_window = win
-                                    logging.info("📝 Notepad window found.")
-                                    handle_notepad_if_opened(notepad_window)
-                                    return
-                        except Exception as e:
-                            logging.error(f"Error checking Notepad: {e}")
-                        time.sleep(5)
-
-                    logging.info("✅ Installation completed successfully. No Notepad found.")
-                    return
-            except Exception as e:
-                logging.error(f"Error while checking Information popup: {e}")
-        time.sleep(60)
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[logging.FileHandler("omp_update_log.txt"), logging.StreamHandler()]
-    )
+C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f50d' in position 33: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
     wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 35, in wait_for_update_installer_and_information
+    logging.info("🔍 Searching inside OMP for 'Update Installer'...")
+Message: "🔍 Searching inside OMP for 'Update Installer'..."
+Arguments: ()
+2025-05-11 18:50:00,553 - INFO - 🔍 Searching inside OMP for 'Update Installer'...
+2025-05-11 18:50:00,617 - INFO - Window found: Taskbar
+2025-05-11 18:50:00,620 - INFO - Window found: OMP Data Change Manager - DATA CHANGE MANAGEMENT - [DCMTableChanges]
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 33: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
+    wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 45, in wait_for_update_installer_and_information
+    logging.info("✅ OMP Main window found.")
+Message: '✅ OMP Main window found.'
+Arguments: ()
+2025-05-11 18:50:00,620 - INFO - ✅ OMP Main window found.
+2025-05-11 18:50:05,693 - INFO - [DEBUG] Type: Window, ID: , Name: Update Installer, Text: Update Installer
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 33: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
+    wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 63, in wait_for_update_installer_and_information
+    logging.info(f"✅ Found 'Update Installer' - Name: {name}, Text: {text}")
+Message: "✅ Found 'Update Installer' - Name: Update Installer, Text: Update Installer"
+Arguments: ()
+2025-05-11 18:50:05,694 - INFO - ✅ Found 'Update Installer' - Name: Update Installer, Text: Update Installer
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u23f3' in position 33: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
+    wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 74, in wait_for_update_installer_and_information
+    logging.info("⏳ Waiting for 'Information' popup every 60 seconds...")
+Message: "⏳ Waiting for 'Information' popup every 60 seconds..."
+Arguments: ()
+2025-05-11 18:50:05,700 - INFO - ⏳ Waiting for 'Information' popup every 60 seconds...
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 33-34: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
+    wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 82, in wait_for_update_installer_and_information
+    logging.info(f"ℹ️ Found 'Information' pane: {text}")
+Message: "ℹ️ Found 'Information' pane: Information"
+Arguments: ()
+2025-05-11 18:50:05,767 - INFO - ℹ️ Found 'Information' pane: Information
+2025-05-11 18:50:05,874 - INFO - ENTER sent to close popup. Checking for Notepad...
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\logging\__init__.py", line 1153, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4dd' in position 33: character maps to <undefined>
+Call stack:
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 115, in <module>
+    wait_for_update_installer_and_information()
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\test.py", line 96, in wait_for_update_installer_and_information
+    logging.info("📝 Notepad window found.")
+Message: '📝 Notepad window found.'
+Arguments: ()
+2025-05-11 18:50:25,917 - INFO - 📝 Notepad window found.
+2025-05-11 18:50:29,128 - INFO - Notepad content saved and closed.
