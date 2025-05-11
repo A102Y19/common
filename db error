@@ -1,47 +1,40 @@
-2025-05-11 17:35:23,934 - INFO - Launching OMP application from: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\bin\OMPartners_menu.cmd
-2025-05-11 17:35:24,010 - INFO - OMP application launch Initiated.
-2025-05-11 17:35:44,021 - INFO - OMP Plus application detected.
-2025-05-11 17:35:44,023 - INFO - Executing stop dispatcher
-2025-05-11 17:35:45,025 - INFO - Sending Alt + U...
-2025-05-11 17:35:47,061 - INFO - Sending W...
-2025-05-11 17:35:49,074 - INFO - Sending C...
-2025-05-11 17:35:51,088 - INFO - Sending C...
-2025-05-11 17:35:53,102 - INFO - Sending ENTER...
-2025-05-11 17:36:03,156 - INFO - Checking for CMD window...
-2025-05-11 17:36:03,170 - INFO - Command Prompt window found.
-2025-05-11 17:36:03,171 - INFO - Sending pushd command to path: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin
-2025-05-11 17:36:10,487 - INFO - Sending stop command...
-2025-05-11 17:36:12,558 - INFO - Dispatcher stop command sent.
-2025-05-11 17:36:44,870 - INFO - captured CMD output
-2025-05-11 17:36:44,871 - INFO - Dispatcher stopped successfully
-2025-05-11 17:36:44,872 - INFO - closing CMD window
-2025-05-11 17:36:45,126 - INFO - CMD closed successfully
-2025-05-11 17:36:55,128 - INFO - Skipping 'base build' as requirement is N
-2025-05-11 17:36:55,130 - INFO - count: 1
-2025-05-11 17:36:56,132 - INFO - Sending Alt + U...
-2025-05-11 17:36:58,165 - INFO - Sending C...
-2025-05-11 17:37:00,178 - INFO - Sending U...
-2025-05-11 17:37:02,191 - INFO - Sending LEFT...
-2025-05-11 17:37:04,244 - INFO - Sending DOWN...
-2025-05-11 17:37:06,347 - INFO - Sending ENTER...
-2025-05-11 17:37:08,400 - INFO - Sending DOWN...
-2025-05-11 17:37:10,604 - INFO - Sending ENTER...
-2025-05-11 17:37:10,659 - INFO - Initiated Installing project solution Build.
-2025-05-11 17:37:40,661 - INFO - Checking for new Command Prompt window...
-2025-05-11 17:37:40,665 - INFO -  current count: 2
-2025-05-11 17:37:40,668 - INFO - New Command Prompt window detected. Initial: 1, current: 2
-2025-05-11 17:37:40,671 - INFO - Skipping 'industry build' as requirement is N
-2025-05-11 17:37:45,678 - INFO - Sending build option...
-2025-05-11 17:37:47,786 - INFO - Build option 1 selected successfully.
-2025-05-11 17:37:47,789 - INFO - Waiting for OMP Data Change Manager to launch...
-2025-05-11 17:38:17,805 - INFO - OMP Data Change Manager window detected.
-2025-05-11 17:38:30,023 - INFO - Enterd password for OMP_JNJ_MD_OMEGA_LAB_OPR
-2025-05-11 17:38:42,229 - INFO - Enterd password for OMP_JNJ_MD_OMEGA_LAB_SOP
-2025-05-11 17:38:54,437 - INFO - Enterd password for OMP_JNJ_MD_OMEGA_LAB_FCT
-2025-05-11 17:39:06,644 - INFO - Enterd password for OMP_JNJ_MD_OMEGA_LAB_UTL
-2025-05-11 17:39:21,648 - INFO - Sending UP...
-2025-05-11 17:39:23,753 - INFO - Sending ENTER...
-2025-05-11 17:39:25,807 - INFO - sending TAB
-2025-05-11 17:39:27,860 - INFO - Sending ENTER...
-2025-05-11 17:39:27,912 - INFO -  Searching inside OMP for 'Update Installer'...
-2025-05-11 17:40:13,428 - INFO -  OMP Main window found.
+2025-05-11 18:32:35,306 - INFO - Searching inside OMP for 'Update Installer'...
+2025-05-11 18:33:15,944 - INFO - Window found: Taskbar
+2025-05-11 18:33:18,190 - INFO - Window found: OMP Data Change Manager - DATA CHANGE MANAGEMENT - [DCMTableChanges]
+2025-05-11 18:33:19,588 - INFO - OMP Main window found.
+2025-05-11 18:35:12,761 - INFO - Checking pane: 
+2025-05-11 18:35:12,767 - INFO - Checking pane: 
+2025-05-11 18:35:12,770 - INFO - Checking pane: In Progress...
+2025-05-11 18:35:12,772 - INFO - Checking pane: 
+2025-05-11 18:35:12,775 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,777 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,782 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,784 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,788 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,790 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,794 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,798 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,800 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,803 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,806 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,808 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,812 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,817 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,820 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,823 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,826 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,829 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,834 - INFO - Checking pane: ompeditor_06_09_024_x64u
+2025-05-11 18:35:12,836 - INFO - Checking pane: 
+2025-05-11 18:35:12,839 - INFO - Checking pane: System
+2025-05-11 18:35:12,841 - INFO - Checking pane: System
+2025-05-11 18:35:12,844 - INFO - Checking pane: Minimize
+2025-05-11 18:35:12,846 - INFO - Checking pane: Maximize
+2025-05-11 18:35:12,848 - INFO - Checking pane: Close
+2025-05-11 18:35:22,912 - INFO - Checking pane: In Progress...
+2025-05-11 18:35:22,916 - INFO - Checking pane: Information
+2025-05-11 18:35:22,918 - INFO - Checking pane: 
+2025-05-11 18:35:22,919 - INFO - Checking pane: System
+2025-05-11 18:35:22,920 - INFO - Checking pane: System
+2025-05-11 18:35:22,921 - INFO - Checking pane: Close
+2025-05-11 18:35:22,922 - INFO - Checking pane: 
