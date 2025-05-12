@@ -121,3 +121,7 @@ time.sleep(20)
 # Go Inside the RDP Window
 pyautogui.moveTo(800,400)
 pyautogui.click()
+
+
+
+\\awsusdmkfsxn01.jnj.com\mdd_tst_omp\OMP_JNJ_MD_ATOM_LAB\OMPartners\development\dispatcher\bin
