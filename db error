@@ -1,77 +1,84 @@
-def wait_for_update_installer_and_information():
-    logging.info("Searching inside OMP for 'Update Installer'...")
+import time
+import logging
+from pywinauto import Desktop
+import pyautogui
 
-    # Step 1: Find OMP Main Window
+def wait_for_update_installer_and_information():
+    logging.info("Searching for 'OMP Data Change Manager' window...")
+
     omp_window = None
     while omp_window is None:
         try:
             windows = Desktop(backend="uia").windows()
             for win in windows:
-                logging.info(f"Window found: {win.window_text()}")
-                if "OMP Data Change Manager" in win.window_text():
+                title = win.window_text()
+                logging.info(f"Window found: {title}")
+                if "OMP Data Change Manager" in title:
                     omp_window = win
-                    logging.info("OMP Main window found.")
+                    logging.info("OMP main window found.")
                     break
         except Exception as e:
-            logging.error(f"Error finding main window: {e}")
+            logging.error(f"Error finding OMP window: {e}")
         time.sleep(5)
 
-    # Step 2: Wait for "Update Installer" pane
-    while True:
-        found_installer = False
+    # Wait for 'Update Installer' to appear
+    logging.info("Looking for 'Update Installer' in OMP window...")
+    update_installer_found = False
+    while not update_installer_found:
         try:
-            all_panes = omp_window.descendants()
-            for pane in all_panes:
-                ctrl_type = pane.element_info.control_type
-                auto_id = pane.element_info.automation_id
-                name = pane.element_info.name
-                text = pane.window_text()
-                if "Update Installer" in text or "Update Installer" in name:
-                    logging.info(f"Found 'Update Installer' - Name: {name}, Text: {text}")
-                    found_installer = True
-                    break
+            panes = omp_window.descendants()
+            for pane in panes:
+                try:
+                    name = pane.element_info.name
+                    text = pane.window_text()
+                    if "Update Installer" in name or "Update Installer" in text:
+                        logging.info(f"'Update Installer' found: {name}")
+                        update_installer_found = True
+                        break
+                except Exception as pane_error:
+                    logging.warning(f"Pane info fetch failed: {pane_error}")
         except Exception as e:
-            logging.error(f"Failed to get pane info: {e}")
+            logging.error(f"Error during Update Installer search: {e}")
 
-        if found_installer:
-            break
-        else:
-            logging.info("Waiting 10 seconds before checking 'Update Installer' again...")
+        if not update_installer_found:
+            logging.info("Update Installer not found yet. Retrying in 10 seconds...")
             time.sleep(10)
 
-    # Step 3: Wait for "Information" popup and Notepad
+    # Wait for 'Information' popup and handle it
     logging.info("Waiting for 'Information' popup every 60 seconds...")
     while True:
         try:
-            all_panes = omp_window.descendants()
-            for pane in all_panes:
-                name = pane.element_info.name
-                text = pane.window_text()
-                if "Information" in name or "Information" in text:
-                    logging.info(f"Found 'Information' pane: {text}")
-                    logging.info("ENTER sent to close popup. Checking for Notepad...")
+            panes = omp_window.descendants()
+            for pane in panes:
+                try:
+                    name = pane.element_info.name
+                    text = pane.window_text()
+                    if "Information" in name or "Information" in text:
+                        logging.info(f"'Information' popup found: {text}")
+                        pyautogui.press('enter')
+                        logging.info("ENTER sent to close popup.")
 
-                    # Wait for Notepad window (up to 60 seconds)
-                    notepad_window = None
-                    start_time = time.time()
-                    timeout = 60
+                        # Check for Notepad after ENTER
+                        notepad_found = False
+                        start_time = time.time()
+                        timeout = 60
 
-                    while notepad_window is None and (time.time() - start_time < timeout):
-                        try:
+                        while time.time() - start_time < timeout:
                             windows = Desktop(backend="uia").windows()
                             for win in windows:
                                 if "Notepad" in win.window_text():
-                                    notepad_window = win
                                     logging.info("Notepad window found.")
-                                    handle_notepad_if_opened()
-                                    return
-                        except Exception as e:
-                            logging.error(f"Error checking Notepad: {e}")
-                        time.sleep(5)
+                                    notepad_found = True
+                                    break
+                            if notepad_found:
+                                break
+                            time.sleep(5)
 
-                    logging.info("Installation completed successfully. No Notepad found.")
-                    return
+                        if not notepad_found:
+                            logging.info("Installation completed. No Notepad found.")
+                        return
+                except Exception as info_error:
+                    logging.warning(f"Error checking Information pane: {info_error}")
         except Exception as e:
-            logging.error(f"Error while checking 'Information' popup: {e}")
-
+            logging.error(f"Error while checking for Information popup: {e}")
         time.sleep(60)
