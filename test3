@@ -1,37 +1,14 @@
-# --- TYPE POWERSHELL COMMAND ---
-def type_command_case_sensitive(command):
-    special_keys = {
-        '_': ['shift', '-'],
-        ':': ['shift', ';'],
-        '"': ['shift', "'"],
-        '|': ['shift', '\\'],
-        '>': ['shift', '.'],
-        '<': ['shift', ','],
-    }
-
-    for char in command:
-        if char in special_keys:
-            pyautogui.hotkey(*special_keys[char])
-        elif char.isupper():
-            pyautogui.keyDown('shift')
-            pyautogui.press(char.lower())
-            pyautogui.keyUp('shift')
-        else:
-            pyautogui.press(char)
-        time.sleep(0.03)
-
-# Correct case-sensitive path
-ps_script_path = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.ps1"
-run_command = f'Powershell -ExecutionPolicy Bypass -File "{ps_script_path}"'
-
-print("⌨️  Typing PowerShell command...")
-type_command_case_sensitive(run_command)
+# Paste command using clipboard
+pyperclip.copy(run_command)
+time.sleep(1)
+pyautogui.hotkey('shift', 'insert')  # safer than ctrl+v in CMD
 pyautogui.press('enter')
 time.sleep(2)
 
-# --- ENTER PASSWORD ---
-print("🔐 Entering password...")
-type_command_case_sensitive(password)
+# Paste password
+pyperclip.copy(password)
+time.sleep(1)
+pyautogui.hotkey('shift', 'insert')
 pyautogui.press('enter')
 
-print("✅ PowerShell script launched inside RDP session.")
+print("PowerShell script launched inside RDP session.")
