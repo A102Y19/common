@@ -1,122 +1,21 @@
-import pyautogui
-import pyperclip
-import time
-import subprocess
-import os
-import pandas as pd
-import datetime
-from pyautogui import getWindowsWithTitle
 
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
-server = "AWSDMKNVAW0002"
-username = r"JNJ\SA-ITS-APSMDINT-LAB"
-password = os.getenv('OMP_key')  # Set this via Environment Variable securely
-rdp_file = "rdp_conn.rdp"
-ps_script_path = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.ps1"
-log_file = "rdp_script_log.txt"
+def type_command_case_sensitive(command):
+    for char in command:
+        if char.isupper():
+            pyautogui.keyDown('shift')
+            pyautogui.press(char.lower())
+            pyautogui.keyUp('shift')
+        elif char in ':\\/_."':
+            pyautogui.press(char)
+        else:
+            pyautogui.write(char)
+        time.sleep(0.03)
 
-# -----------------------------
-# LOGGING FUNCTION
-# -----------------------------
-def log(message):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(log_file, "a") as f:
-        f.write(f"[{timestamp}] {message}\n")
-    print(message)
+# Build command
+ps_cmd = f'powershell -ExecutionPolicy Bypass -File "{ps_script_path}"'
 
-# -----------------------------
-# MAIN EXECUTION
-# -----------------------------
-try:
-    log(f"Starting RDP session to: {server}")
-
-    if not password:
-        raise ValueError("Environment variable 'OMP_key' not found.")
-
-    # Store Credentials
-    store_cred_cmd = f'cmdkey /generic:TERMSRV/{server} /user:{username} /pass:{password}'
-    subprocess.run(store_cred_cmd, shell=True)
-    log("Stored RDP credentials successfully.")
-
-    # Write RDP file
-    with open(rdp_file, "w", encoding="utf-16") as f:
-        f.write(f"""screen mode id:i:2
-use multimon:i:0
-desktopwidth:i:1280
-desktopheight:i:720
-session bpp:i:32
-winposstr:s:0,3,0,0,800,600
-compression:i:1
-keyboardhook:i:2
-audiocapturemode:i:0
-videoplaybackmode:i:1
-connection type:i:7
-networkautodetect:i:1
-bandwidthautodetect:i:1
-displayconnectionbar:i:1
-enableworkspacereconnect:i:0
-disable wallpaper:i:0
-allow font smoothing:i:0
-allow desktop composition:i:0
-disable full window drag:i:1
-disable menu anims:i:1
-disable themes:i:0
-disable cursor setting:i:0
-bitmapcachepersistenable:i:1
-full address:s:{server}
-audiomode:i:0
-redirectprinters:i:1
-redirectclipboard:i:1
-prompt for credentials:i:0
-authentication level:i:2
-""")
-
-    # Launch RDP session
-    subprocess.Popen(["mstsc", rdp_file])
-    log("RDP session launched.")
-    time.sleep(8)
-
-    # Handle any confirmation dialogs
-    pyautogui.press('tab', presses=2, interval=0.2)
-    pyautogui.press('enter')
-    time.sleep(15)
-
-    # Wait for RDP window to be visible
-    max_wait = 30
-    start_time = time.time()
-    while not getWindowsWithTitle(server):
-        if time.time() - start_time > max_wait:
-            raise TimeoutError(f"RDP window not found for server: {server}")
-        time.sleep(1)
-
-    # Handle Info/Warning inside RDP
-    pyautogui.press('enter')
-    time.sleep(10)
-
-    # Focus RDP window
-    pyautogui.moveTo(800, 400)
-    pyautogui.click()
-
-    # Open Run dialog
-    pyautogui.hotkey('win', 'r')
-    time.sleep(2)
-
-    # Copy PowerShell execution command to clipboard
-    run_command = f'powershell -ExecutionPolicy Bypass -File "{ps_script_path}"'
-    pyperclip.copy(run_command)
-    pyautogui.hotkey('ctrl', 'v')
-    time.sleep(1)
-    pyautogui.press('enter')
-    time.sleep(5)
-
-    # Type password when prompted
-    pyautogui.write(password, interval=0.05)
-    time.sleep(1)
-    pyautogui.press('enter')
-
-    log("PowerShell script launched successfully inside RDP.")
-
-except Exception as e:
-    log(f"[ERROR] {str(e)}")
+# Send the command
+print("Typing PowerShell command...")
+type_command_case_sensitive(ps_cmd)
+pyautogui.press('enter')
+print("Command executed inside RDP.")
