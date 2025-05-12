@@ -1,14 +1,175 @@
-# Paste command using clipboard
-pyperclip.copy(run_command)
-time.sleep(1)
-pyautogui.hotkey('shift', 'insert')  # safer than ctrl+v in CMD
-pyautogui.press('enter')
-time.sleep(2)
+###### RUN THIS COMMAND IN TERMINAL TO INSTALL LIBRARIES #####
+#  pip install pyautogui, pyperclip, pandas  #
 
-# Paste password
-pyperclip.copy(password)
+##### To RUN the SCRIPT #####
+# Place the csv file in the same Directory along with Python file #
+## Commands ##
+#  cd <directory>  #
+#  python rdp_users_pyautogui.py  #
+
+import pyautogui
+from pyautogui import getWindowsWithTitle
+import pygetwindow as gw
+import pyperclip
+import time
+import subprocess
+import re
+import os
+import pandas as pd
+import datetime
+
+#######################################################################################################
+# DO NOT CLICK ANYWHERE UNTIL THE SCRIPT RUNS AND RETURNS TO THIS WINDOW AFTER COMPLETING ALL SERVERS #
+#######################################################################################################
+
+# Handle CSV file for list of Servers
+
+
+
+server = "AWSDMKNVAW0002"
+username = r"JNJ\SA-ITS-APSMDINT-LAB"
+ps_script_path = r"\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.ps1"
+password = os.getenv('OMP_key')
+if password is not None:
+    print("Password retrieved successfully.")
+else:
+    print("Environment variable 'OMP_key' not found.")
+
+print(f'Current Server: {server}')
+    
+
+    # Configurations
+machineName = server  # Replace with actual server name
+rdp_file = "rdp_conn.rdp"
+# Store Cred for RDP Auto Connect
+store_cred = f'cmdkey /generic:TERMSRV/{machineName} /user:{username} /pass:{password}'
+subprocess.run(store_cred, shell = True)
+# RDP File for Session
+with open(rdp_file,"w",encoding="utf-16") as f:
+    f.write(f'''screen mode id:i:2
+use multimon:i:0
+desktopwidth:i:1280
+desktopheight:i:720
+session bpp:i:32
+winposstr:s:0,3,0,0,800,600
+compression:i:1
+keyboardhook:i:2
+audiocapturemode:i:0
+videoplaybackmode:i:1
+connection type:i:7
+networkautodetect:i:1
+bandwidthautodetect:i:1
+displayconnectionbar:i:1
+enableworkspacereconnect:i:0
+disable wallpaper:i:0
+allow font smoothing:i:0
+allow desktop composition:i:0
+disable full window drag:i:1
+disable menu anims:i:1
+disable themes:i:0
+disable cursor setting:i:0
+bitmapcachepersistenable:i:1
+full address:s:{machineName}
+audiomode:i:0
+redirectprinters:i:1
+redirectlocation:i:0
+redirectcomports:i:0
+redirectsmartcards:i:1
+redirectwebauthn:i:1
+redirectclipboard:i:1
+redirectposdevices:i:0
+autoreconnection enabled:i:1
+authentication level:i:2
+prompt for credentials:i:0
+negotiate security layer:i:1
+remoteapplicationmode:i:0
+alternate shell:s:
+shell working directory:s:
+gatewayhostname:s:
+gatewayusagemethod:i:4
+gatewaycredentialssource:i:4
+gatewayprofileusagemethod:i:0
+promptcredentialonce:i:0
+gatewaybrokeringtype:i:0
+use redirection server name:i:0
+rdgiskdcproxy:i:0
+kdcproxyname:s:
+enablerdsaadauth:i:0
+''')
+# Call Remote Desktop Connection
+subprocess.Popen(["mstsc", rdp_file])
+print("Launching RDP session...")
+time.sleep(8)
+# Handle Confirmation Dialog
+pyautogui.press('tab', presses=2, interval = 0.2)
+pyautogui.press('enter')
+time.sleep(15)
+# Wait for RDP to Load
+max_wait = 30
+start = time.time()
+failed_list=[]
+while True:
+    windows = getWindowsWithTitle(machineName)
+    if windows:
+        break
+    if time.time() - start > max_wait:
+        failed_list.append(machineName)
+        raise TimeoutError(f'Failed to Connect for {machineName}')
+    time.sleep(0.5)
+# Handle Information Warning of the Server
+pyautogui.press('enter')
+time.sleep(20)
+# Go Inside the RDP Window
+pyautogui.moveTo(800,400)
+pyautogui.click()
+# Run Command Prompt
+pyautogui.keyDown('win')
+time.sleep(0.2)
+pyautogui.press('r')
+pyautogui.keyUp('win')
 time.sleep(1)
-pyautogui.hotkey('shift', 'insert')
+#pyautogui.write("cmd",interval=0.1)
+#pyautogui.keyDown('ctrl')
+#time.sleep(0.2)
+#pyautogui.keyDown('shift')
+#time.sleep(0.2)
+#pyautogui.press('enter')
+#pyautogui.keyUp('ctrl')
+#pyautogui.keyUp('shift')
+#time.sleep(3)
+# Handle Confirmation for cmd Dialog
+#pyautogui.press('tab', presses=2, interval = 0.2)
+pyautogui.write("powershell", interval=0.05)
+
+pyautogui.press('enter')
+time.sleep(5)
+
+
+# Copy PowerShell execution command to clipboard
+run_command = f'powershell {ps_script_path}'
+
+commands = [
+    run_command,
+    password
+
+]
+
+for command in commands:
+        pyperclip.copy(command)
+        pyautogui.keyDown('ctrl')
+        time.sleep(0.2)
+        pyautogui.press('v')
+        time.sleep(0.1)
+        pyautogui.keyUp('ctrl')
+        pyautogui.press('enter')
+        time.sleep(4)
+
+print(f"All commands executed on {server} successfully")
+
+
+# Type password when prompted
+pyautogui.write(password, interval=0.05)
+time.sleep(1)
 pyautogui.press('enter')
 
-print("PowerShell script launched inside RDP session.")
+log("PowerShell script launched successfully inside RDP.")
