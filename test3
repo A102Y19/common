@@ -128,18 +128,18 @@ time.sleep(0.2)
 pyautogui.press('r')
 pyautogui.keyUp('win')
 time.sleep(1)
-#pyautogui.write("cmd",interval=0.1)
-#pyautogui.keyDown('ctrl')
-#time.sleep(0.2)
-#pyautogui.keyDown('shift')
-#time.sleep(0.2)
-#pyautogui.press('enter')
-#pyautogui.keyUp('ctrl')
-#pyautogui.keyUp('shift')
-#time.sleep(3)
+pyautogui.write("cmd",interval=0.1)
+pyautogui.keyDown('ctrl')
+time.sleep(0.2)
+pyautogui.keyDown('shift')
+time.sleep(0.2)
+pyautogui.press('enter')
+pyautogui.keyUp('ctrl')
+pyautogui.keyUp('shift')
+time.sleep(3)
 # Handle Confirmation for cmd Dialog
-#pyautogui.press('tab', presses=2, interval = 0.2)
-pyautogui.write("powershell", interval=0.05)
+pyautogui.press('tab', presses=2, interval = 0.2)
+#pyautogui.write("powershell", interval=0.05)
 
 pyautogui.press('enter')
 time.sleep(5)
@@ -148,28 +148,27 @@ time.sleep(5)
 # Copy PowerShell execution command to clipboard
 run_command = f'powershell {ps_script_path}'
 
-commands = [
-    run_command,
-    password
 
-]
-
-for command in commands:
-        pyperclip.copy(command)
-        pyautogui.keyDown('ctrl')
-        time.sleep(0.2)
-        pyautogui.press('v')
-        time.sleep(0.1)
-        pyautogui.keyUp('ctrl')
-        pyautogui.press('enter')
-        time.sleep(4)
+pyperclip.copy(run_command)
+pyautogui.keyDown('ctrl')
+time.sleep(0.2)
+pyautogui.press('v')
+time.sleep(0.1)
+pyautogui.keyUp('ctrl')
+pyautogui.press('enter')
+time.sleep(4)
 
 print(f"All commands executed on {server} successfully")
 
 
 # Type password when prompted
-pyautogui.write(password, interval=0.05)
-time.sleep(1)
+pyperclip.copy(password)
+pyautogui.keyDown('ctrl')
+time.sleep(0.4)
+pyautogui.press('v')
+time.sleep(0.2)
+pyautogui.keyUp('ctrl')
 pyautogui.press('enter')
+time.sleep(4)
 
-log("PowerShell script launched successfully inside RDP.")
+print("PowerShell script launched successfully inside RDP.")
