@@ -1,13 +1,63 @@
-[INFO] Log file: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\log_2025-05-13_01-21-49.txt
+
+@echo off
+
+:: 1) Create a timestamp for the log file
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
+set logfile=\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\log_%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%_%datetime:~8,2%-%datetime:~10,2%-%datetime:~12,2%.txt
+
+echo [INFO] Log file: %logfile%
+
+:: 2) Run the first PowerShell script, capture its output in a temporary file
+echo [INFO] Running Agent Monitoring script...
+Start /b powershell -ExecutionPolicy Bypass -File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\AgentMonitoring_Omega_LAB.ps1" > "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt" 2>&1
+timeout /t 5 /nobreak>nul
+:: 3) Append the first script's output to the main log file
+type \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt >> %logfile%
+
+echo [INFO] Checking for 'offline'...
+
+:: 4) Check if 'offline' is found in the output
+findstr /i "OFFLINE" \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt >nul
+echo Error Level: %errorlevel%
+if %errorlevel%==0 (
+        
+    :: 4a) Run the Python script
+    echo [INFO] Agent Inactive script execution starting...
+    echo [INFO] Agent Inactive script execution starting... >> %logfile%
+    python "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\inactive_test.py" %1 >> "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_Inactive.txt" 2>&1
+    type \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_Inactive.txt >> %logfile%
+	echo [INFO] Agent Inactive script execution completed.
+	del \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_Inactive.txt
+
+    
+    :: 4b) Run the second PowerShell script
+    echo [INFO] Agent Start script Execution starting...
+    echo [INFO] Agent Start script Execution starting... >> %logfile%
+    python "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\OMEGA_LAB.py" %2 >> "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_omegalab.txt" 2>&1
+	type \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_omegalab.txt >> %logfile%
+	echo Agent restart script executed successfully >> %logfile%
+	del \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_omegalab.txt
+) else (
+    echo [INFO] No Agent is 'offline'. Exiting script. >> %logfile%
+    del \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt >> %logfile%
+    goto :EOF
+)
+
+:: 5) Cleanup and end
+del \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt
+pause
+
+
+
+[INFO] Log file: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\log_2025-05-13_01-30-58.txt
 [INFO] Running Agent Monitoring script...
 [INFO] Checking for 'offline'...
 Error Level: 0
 [INFO] Agent Inactive script execution starting...
 [INFO] Agent Inactive script execution completed.
+\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_Inactive.txt
+The process cannot access the file because it is being used by another process.
 [INFO] Agent Start script Execution starting...
-The process cannot access the file because it is being used by another process.
-The process cannot access the file because it is being used by another process.
-The process cannot access the file because it is being used by another process.
 \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt
 The process cannot access the file because it is being used by another process.
 Press any key to continue . . .
