@@ -1,24 +1,15 @@
-def type_text_safely(text):
-    for char in text:
-        if char.isupper():
-            keyboard.press_and_release('shift+' + char.lower())
-        elif char == '_':
-            keyboard.press_and_release('shift+-')
-        else:
-            keyboard.write(char)
-        time.sleep(0.2)
-    keyboard.press_and_release('enter')
+C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.py
+Password retrieved successfully.
+Current Server: AWSDMKNVAW0002
 
-for command in commands:
-    if command == pass1:
-        type_text_safely(command)
-        time.sleep(0.2)
-    else:
-        pyperclip.copy(command)
-        pyautogui.keyDown('ctrl')
-        time.sleep(0.2)
-        pyautogui.press('v')
-        time.sleep(0.1)
-        pyautogui.keyUp('ctrl')
-        pyautogui.press('enter')
-        time.sleep(4)
+CMDKEY: Credential added successfully.
+Launching RDP session...
+ pass : Jnjtestuser_1
+Traceback (most recent call last):
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.py", line 174, in <module>
+    type_text_safely(command)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB.py", line 164, in type_text_safely
+    keyboard.press_and_release('shift+' + char.lower())
+    ^^^^^^^^
+NameError: name 'keyboard' is not defined
