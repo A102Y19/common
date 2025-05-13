@@ -43,3 +43,19 @@ if %errorlevel%==0 (
 del \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt
 pause
 
+
+
+[INFO] Log file: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\log_2025-05-13_01-14-15.txt
+[INFO] Running Agent Monitoring script...
+The process cannot access the file because it is being used by another process.
+[INFO] Checking for 'offline'...
+Error Level: 0
+[INFO] Agent Inactive script execution starting...
+[INFO] Agent Inactive script execution completed.
+[INFO] Agent Start script Execution starting...
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\log\temp_output.txt
+The process cannot access the file because it is being used by another process.
+Press any key to continue . . .
