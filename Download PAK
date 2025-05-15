@@ -478,3 +478,37 @@ for index, row in df.iterrows():
 
 input("Press Enter to close")
 logging.info("All tasks completed successfully!")
+
+
+
+2025-05-15 03:24:10,426 - INFO - Accessing FTP: https://transferus.omp.com/url/hjvwkxrzkywitc34
+2025-05-15 03:24:14,035 - INFO - Password entered, waiting for login response...
+2025-05-15 03:24:19,051 - INFO - FTP Login Successful!
+2025-05-15 03:24:24,053 - INFO - Opening PAK File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=1&referrer=%2Furl%2Fhjvwkxrzkywitc34#expl-tabl./SHARED/dverbeeck/dP0aBRcMMzEAejf3/from_omp/VPCxBuilds/OMEGALAB
+2025-05-15 03:24:26,273 - INFO - Successfully opened PAK file path.
+2025-05-15 03:24:31,324 - INFO - Password entered, waiting for login response...
+2025-05-15 03:24:36,330 - INFO - FTP Login Successful!
+2025-05-15 03:24:41,386 - INFO -  File '06_25_026.zip' selected, opening preview...
+2025-05-15 03:24:41,428 - INFO -  Download initiated for file: '06_25_026.zip'
+2025-05-15 03:25:11,431 - INFO -  Download confirmed: '06_25_026.zip' is in C:\Users\SA-ITS-APSOMINT-LAB\Downloads
+2025-05-15 03:25:11,433 - INFO - downloaded file: 06_25_026.zip
+2025-05-15 03:25:11,631 - INFO -  File moved successfully to: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\06_25_026.zip
+2025-05-15 03:25:11,634 - INFO -  File transferred successfully to \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation.
+2025-05-15 03:25:11,636 - INFO - Processing Executable File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=1&referrer=%2Furl%2Fhjvwkxrzkywitc34#expl-tabl./SHARED/dverbeeck/dP0aBRcMMzEAejf3/from_omp/VPCxBuilds/OMEGALAB
+2025-05-15 03:25:11,640 - INFO - Opening Executable File Path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=1&referrer=%2Furl%2Fhjvwkxrzkywitc34#expl-tabl./SHARED/dverbeeck/dP0aBRcMMzEAejf3/from_omp/VPCxBuilds/OMEGALAB
+2025-05-15 03:25:13,855 - INFO - Successfully opened Executable file path: https://transferus.omp.com/ui/core/index.html?mode=public&secure=1&referrer=%2Furl%2Fhjvwkxrzkywitc34#expl-tabl./SHARED/dverbeeck/dP0aBRcMMzEAejf3/from_omp/VPCxBuilds/OMEGALAB
+2025-05-15 03:25:18,918 - INFO - Password entered, waiting for login response...
+2025-05-15 03:25:23,931 - INFO - FTP Login Successful!
+2025-05-15 03:25:28,934 - INFO - Finished executing access_executable_filepath()
+2025-05-15 03:25:28,939 - INFO - Processing Executable file download: 06_25_026.zip
+2025-05-15 03:25:28,979 - INFO -  Executable '06_25_026.zip' selected for download...
+2025-05-15 03:25:29,024 - INFO -  Download initiated for executable: '06_25_026.zip'
+2025-05-15 03:25:59,026 - INFO -  Download confirmed: '06_25_026.zip' is in C:\Users\SA-ITS-APSOMINT-LAB\Downloads
+2025-05-15 03:26:29,028 - INFO - downloaded file: 06_25_026.zip
+2025-05-15 03:26:29,127 - INFO -  File moved successfully to \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent\06_25_026.zip
+2025-05-15 03:26:29,130 - INFO -  Executable File transferred successfully to \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\Agent.
+2025-05-15 03:26:29,132 - INFO - Processing unzip operation in: \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation
+2025-05-15 03:26:33,578 - INFO -  Extracted '06_25_026.zip' to \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation
+2025-05-15 03:26:33,579 - INFO -  Unzipping successful for '06_25_026.zip' in \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation
+2025-05-15 03:26:36,863 - ERROR -  Error unzipping file: [Errno 2] No such file or directory: '\\\\awsusdmjfsxn01.jnj.com\\eth_get_dev_omp\\OMP_JNJ_MD_OMEGA_LAB\\OMPartners\\development\\dispatcher\\bin\\Automation\\Agent\\06_25_026\\upgrade\\scripts\\20230327_OPR_Add_Column_FinalDirectShipLocation_GDMBatch\\20230327_OPR_Add_Column_FinalDirectShipLocation_GDMBatch.tsv'
+2025-05-15 03:26:36,867 - INFO -  Unzipping failed.
