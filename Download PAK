@@ -1,33 +1,21 @@
-import subprocess
-import socket
-import getpass
-import logging
+INFO:root:Current host is AWSDMJNVAW0002
+INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW0001 /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
+INFO: scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB" is currently running.
+SUCCESS: Attempted to run the scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB".
 
-logging.basicConfig(level=logging.INFO)
+INFO:root:Executing: schtasks.exe /run /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
 
-servers = {
-    "AWSDMJNVAW0001": r"OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB",
-    "AWSDMJNVAW0002": r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent",
-    "AWSDMJNVAW000D": r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent",
-    "AWSDMJNVAW000E": r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent",
-    "AWSDMJNVAW000H": r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent",
-    "AWSDMJNVAW000M": r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-}
+Error: ERROR: The system cannot find the file specified.
 
-username = "SA-ITS-APSOMINT-LAB"
-password = getpass.getpass("Enter password for scheduled tasks: ")
 
-current_host = socket.gethostname().upper()
-logging.info(f"Current host is {current_host}")
+INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000D /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
 
-for server, task in servers.items():
-    if current_host == server:
-        cmd = ["schtasks.exe", "/run", "/tn", task]
-    else:
-        cmd = ["schtasks.exe", "/run", "/S", server, "/U", username, "/P", password, "/tn", task]
+INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000E /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
 
-    logging.info(f"Executing: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    print(result.stdout)
-    if result.stderr:
-        print(f"Error: {result.stderr}")
+INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000H /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+
+INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000M /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
