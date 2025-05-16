@@ -1,41 +1,54 @@
-C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB_Test.py
-INFO:root:Current host is awsdmjnvaw0002
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW0001 /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
-INFO:root:SUCCESS: Attempted to run the scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB" on AWSDMJNVAW0001.
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW0001 /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
-ERROR:root:Error: ERROR: The system cannot find the file specified.
+import subprocess
+import socket
+import logging
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000D /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
-ERROR:root:Error: ERROR: The system cannot find the file specified.
+def get_current_hostname():
+    """ Get the current machine's hostname """
+    return socket.gethostname()
 
+def execute_task(server, task_name, user, password):
+    """ Execute the scheduled task on the remote server """
+    command = f'schtasks.exe /run /S {server} /U {user} /P {password} /tn {task_name}'
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        logging.info(f"Successfully ran task {task_name} on {server}")
+    else:
+        logging.error(f"Failed to run task {task_name} on {server}: {result.stderr}")
 
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000D /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
-INFO:root:SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent" on AWSDMJNVAW000D.
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000E /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
-ERROR:root:Error: ERROR: The system cannot find the file specified.
+def execute_local_task(task_name):
+    """ Execute the task locally on the current host """
+    command = f'schtasks.exe /run /tn {task_name}'
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        logging.info(f"Successfully ran task {task_name} locally.")
+    else:
+        logging.error(f"Failed to run task {task_name} locally: {result.stderr}")
 
+def main():
+    current_host = get_current_hostname()
+    logging.info(f"Current host is {current_host}")
 
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000E /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
-INFO:root:SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent" on AWSDMJNVAW000E.
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000H /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
-ERROR:root:Error: ERROR: The system cannot find the file specified.
+    # Credentials and tasks
+    user = "SA-ITS-APSOMINT-LAB"
+    password = "Jnjtestuser_1"
+    tasks = [
+        "OMPDISPATCHER\\OMP_JNJ_MD_OMEGA_LAB",
+        "OMP Dispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
+    ]
+    
+    # For the specific machine, run tasks locally
+    if current_host == "AWSDMJNVAW0002":
+        for task in tasks:
+            execute_local_task(task)
+    else:
+        # For other machines, execute tasks remotely
+        remote_servers = ["AWSDMJNVAW0001", "AWSDMJNVAW000D", "AWSDMJNVAW000E", "AWSDMJNVAW000H", "AWSDMJNVAW000M"]
+        for server in remote_servers:
+            for task in tasks:
+                execute_task(server, task, user, password)
 
-
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000H /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
-ERROR:root:Error: ERROR: The system cannot find the file specified.
-
-
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000M /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB
-ERROR:root:Error: ERROR: The system cannot find the file specified.
-
-
-INFO:root:Executing: schtasks.exe /run /S AWSDMJNVAW000M /U SA-ITS-APSOMINT-LAB /P Jnjtestuser_1 /tn OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent
-ERROR:root:Error: ERROR: The system cannot find the file specified.
-
-
-INFO:root:Web request to http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl successful with status: HTTP/1.1 500 Server encountered an internal error. To get more info turn on customErrors in the server's config file.
-Server: MS .NET Remoting, MS .NET CLR 4.0.30319.42000
-Content-Length: 106
-
-
+if __name__ == "__main__":
+    main()
