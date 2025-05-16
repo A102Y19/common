@@ -1,54 +1,29 @@
-import subprocess
-import socket
-import logging
+C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB_Test.py
+INFO:root:Current host is awsdmjnvaw0002
+INFO:root:Successfully ran task OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB on AWSDMJNVAW0001
+ERROR:root:Failed to run task OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent on AWSDMJNVAW0001: ERROR: Invalid argument/option - 'Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent'.
+Type "SCHTASKS /RUN /?" for usage.
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+ERROR:root:Failed to run task OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB on AWSDMJNVAW000D: ERROR: The system cannot find the file specified.
 
-def get_current_hostname():
-    """ Get the current machine's hostname """
-    return socket.gethostname()
 
-def execute_task(server, task_name, user, password):
-    """ Execute the scheduled task on the remote server """
-    command = f'schtasks.exe /run /S {server} /U {user} /P {password} /tn {task_name}'
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode == 0:
-        logging.info(f"Successfully ran task {task_name} on {server}")
-    else:
-        logging.error(f"Failed to run task {task_name} on {server}: {result.stderr}")
+ERROR:root:Failed to run task OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent on AWSDMJNVAW000D: ERROR: Invalid argument/option - 'Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent'.
+Type "SCHTASKS /RUN /?" for usage.
 
-def execute_local_task(task_name):
-    """ Execute the task locally on the current host """
-    command = f'schtasks.exe /run /tn {task_name}'
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode == 0:
-        logging.info(f"Successfully ran task {task_name} locally.")
-    else:
-        logging.error(f"Failed to run task {task_name} locally: {result.stderr}")
+ERROR:root:Failed to run task OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB on AWSDMJNVAW000E: ERROR: The system cannot find the file specified.
 
-def main():
-    current_host = get_current_hostname()
-    logging.info(f"Current host is {current_host}")
 
-    # Credentials and tasks
-    user = "SA-ITS-APSOMINT-LAB"
-    password = "Jnjtestuser_1"
-    tasks = [
-        "OMPDISPATCHER\\OMP_JNJ_MD_OMEGA_LAB",
-        "OMP Dispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-    ]
-    
-    # For the specific machine, run tasks locally
-    if current_host == "AWSDMJNVAW0002":
-        for task in tasks:
-            execute_local_task(task)
-    else:
-        # For other machines, execute tasks remotely
-        remote_servers = ["AWSDMJNVAW0001", "AWSDMJNVAW000D", "AWSDMJNVAW000E", "AWSDMJNVAW000H", "AWSDMJNVAW000M"]
-        for server in remote_servers:
-            for task in tasks:
-                execute_task(server, task, user, password)
+ERROR:root:Failed to run task OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent on AWSDMJNVAW000E: ERROR: Invalid argument/option - 'Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent'.
+Type "SCHTASKS /RUN /?" for usage.
 
-if __name__ == "__main__":
-    main()
+ERROR:root:Failed to run task OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB on AWSDMJNVAW000H: ERROR: The system cannot find the file specified.
+
+
+ERROR:root:Failed to run task OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent on AWSDMJNVAW000H: ERROR: Invalid argument/option - 'Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent'.
+Type "SCHTASKS /RUN /?" for usage.
+
+ERROR:root:Failed to run task OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB on AWSDMJNVAW000M: ERROR: The system cannot find the file specified.
+
+
+ERROR:root:Failed to run task OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent on AWSDMJNVAW000M: ERROR: Invalid argument/option - 'Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent'.
+Type "SCHTASKS /RUN /?" for usage.
