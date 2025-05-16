@@ -1,61 +1,8 @@
-import subprocess
-import requests
-import time
-from datetime import datetime
-
-# Replace with your actual password (ensure you handle securely in production)
-password = "your_password_here"
-
-# Machine and task list
-tasks = [
-    ("AWSDMJNVAW0001", r"OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB"),
-    ("AWSDMJNVAW0002", r"OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
-    ("AWSDMJNVAW000D", r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
-    ("AWSDMJNVAW000E", r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
-    ("AWSDMJNVAW000H", r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
-    ("AWSDMJNVAW000M", r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
-]
-
-username = "SA-ITS-APSOMINT-LAB"
-
-# Run tasks
-for machine, task in tasks:
-    subprocess.run([
-        "schtasks.exe", "/run",
-        "/S", machine,
-        "/U", username,
-        "/P", password,
-        "/tn", task
-    ])
-    if machine == "AWSDMJNVAW0001":
-        time.sleep(10)
-
-# Wait before checking service
-time.sleep(30)
-
-# Service status check
-url = "http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl"
-try:
-    start = time.time()
-    response = requests.get(url)
-    end = time.time()
-
-    result = {
-        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Uri": url,
-        "StatusCode": response.status_code,
-        "StatusDescription": response.reason,
-        "ResponseLength": len(response.content),
-        "TimeTaken": int((end - start) * 1000)
-    }
-except requests.exceptions.RequestException as e:
-    result = {
-        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Uri": url,
-        "StatusCode": -1,
-        "StatusDescription": str(e),
-        "ResponseLength": 0,
-        "TimeTaken": -1
-    }
-
-print(result)
+C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB_Test.py
+SUCCESS: Attempted to run the scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB".
+ERROR: User credentials are not allowed on the local machine.
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+{'Time': '2025-05-16 02:09:36', 'Uri': 'http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl', 'StatusCode': 200, 'StatusDescription': 'OK', 'ResponseLength': 6018, 'TimeTaken': 15}
