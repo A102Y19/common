@@ -1,39 +1,61 @@
-$pwd = Read-Host -AsSecureString
-$bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pwd)
-$value = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+import subprocess
+import requests
+import time
+from datetime import datetime
 
-schtasks.exe /run /S "AWSDMJNVAW0001" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB"
-Start-Sleep -Seconds 10
-schtasks.exe /run /S "AWSDMJNVAW0002" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-schtasks.exe /run /S "AWSDMJNVAW000D" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-schtasks.exe /run /S "AWSDMJNVAW000E" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-schtasks.exe /run /S "AWSDMJNVAW000H" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
-schtasks.exe /run /S "AWSDMJNVAW000M" /U "SA-ITS-APSOMINT-LAB" /P $value /tn "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"
+# Replace with your actual password (ensure you handle securely in production)
+password = "your_password_here"
 
+# Machine and task list
+tasks = [
+    ("AWSDMJNVAW0001", r"OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB"),
+    ("AWSDMJNVAW0002", r"OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
+    ("AWSDMJNVAW000D", r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
+    ("AWSDMJNVAW000E", r"OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
+    ("AWSDMJNVAW000H", r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
+    ("AWSDMJNVAW000M", r"OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent"),
+]
 
-Start-Sleep -Seconds 30
-  $url = "http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl"
-      $time = try{ 
-      $request = $null 
-       ## Request the URI, and measure how long the response took. 
-      $result1 = Measure-Command { $request = Invoke-WebRequest -Uri $url } 
-      $result1.TotalMilliseconds 
-      }  
-  
-      catch 
-      { 
-       <# If the request generated an exception (i.e.: 500 server error or 404 not found), we can pull the status code from the 
-       Exception.Response property #> 
-       $request = $_.Exception.Response 
-       $time = -1 
-      }   
-      $result = [Array]$result + [PSCustomObject] @{ 
-      Time = Get-Date; 
-      Uri = $url; 
-      StatusCode = [int] $request.StatusCode; 
-      StatusDescription = $request.StatusDescription; 
-      ResponseLength = $request.RawContentLength; 
-      TimeTaken =  $time;  
-      } 
-      $result
-      Clear-Variable result
+username = "SA-ITS-APSOMINT-LAB"
+
+# Run tasks
+for machine, task in tasks:
+    subprocess.run([
+        "schtasks.exe", "/run",
+        "/S", machine,
+        "/U", username,
+        "/P", password,
+        "/tn", task
+    ])
+    if machine == "AWSDMJNVAW0001":
+        time.sleep(10)
+
+# Wait before checking service
+time.sleep(30)
+
+# Service status check
+url = "http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl"
+try:
+    start = time.time()
+    response = requests.get(url)
+    end = time.time()
+
+    result = {
+        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Uri": url,
+        "StatusCode": response.status_code,
+        "StatusDescription": response.reason,
+        "ResponseLength": len(response.content),
+        "TimeTaken": int((end - start) * 1000)
+    }
+except requests.exceptions.RequestException as e:
+    result = {
+        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Uri": url,
+        "StatusCode": -1,
+        "StatusDescription": str(e),
+        "ResponseLength": 0,
+        "TimeTaken": -1
+    }
+
+print(result)
