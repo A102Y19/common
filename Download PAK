@@ -1,62 +1,11 @@
-import subprocess
-import time
-import requests
-from datetime import datetime
+C:\Users\SA-ITS-APSOMINT-LAB>python \\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\OMEGA_LAB_Test.py
+INFO: scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB" is currently running.
+SUCCESS: Attempted to run the scheduled task "OMPDISPATCHER\OMP_JNJ_MD_OMEGA_LAB".
 
-def run_schtask(task_name, machine=None):
-    command = ["schtasks.exe", "/run", "/tn", task_name]
-    if machine:
-        command.extend(["/S", machine])
-    try:
-        result = subprocess.run(command, capture_output=True, text=True)
-        print(result.stdout.strip())
-        if result.stderr:
-            print("Error:", result.stderr.strip())
-    except Exception as e:
-        print(f"Failed to run task {task_name}: {e}")
+Error: ERROR: Access is denied.
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMP Dispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
+SUCCESS: Attempted to run the scheduled task "OMPDispatcher\OMP_JNJ_MD_OMEGA_LAB_DSPAgent".
 
-# Task execution
-remote_tasks = [
-    ("OMPDISPATCHER\\OMP_JNJ_MD_OMEGA_LAB", "AWSDMJNVAW0001"),
-    ("OMP Dispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent", "AWSDMJNVAW0002"),
-    ("OMP Dispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent", "AWSDMJNVAW000D"),
-    ("OMP Dispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent", "AWSDMJNVAW000E"),
-    ("OMPDispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent", "AWSDMJNVAW000H"),
-    ("OMPDispatcher\\OMP_JNJ_MD_OMEGA_LAB_DSPAgent", "AWSDMJNVAW000M"),
-]
-
-# Run remote tasks
-for task, machine in remote_tasks:
-    run_schtask(task, machine)
-
-# Run local task without /U and /P
-run_schtask("OMPDISPATCHER\\OMP_JNJ_MD_OMEGA_LAB")  # This runs on the local machine as current user
-
-# Sleep to allow services to start
-time.sleep(30)
-
-# WSDL Check
-url = "http://awsdmjnvaw0001:8095/OMPDispatcher?wsdl"
-try:
-    start = time.time()
-    response = requests.get(url, timeout=10)
-    time_taken = int((time.time() - start) * 1000)  # milliseconds
-    result = {
-        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Uri": url,
-        "StatusCode": response.status_code,
-        "StatusDescription": response.reason,
-        "ResponseLength": len(response.content),
-        "TimeTaken": time_taken
-    }
-except Exception as e:
-    result = {
-        "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Uri": url,
-        "StatusCode": -1,
-        "StatusDescription": str(e),
-        "ResponseLength": 0,
-        "TimeTaken": -1
-    }
-
-print(result)
+Error: ERROR: The system cannot find the file specified.
