@@ -1,96 +1,56 @@
-def stop_dispatcher(omp_app, dispatcher_path, max_retries=2):
+def proejct_solution_build(omp_app):
     try:
-        for attempt in range(1, max_retries + 1):
-            logging.info(f"Attempt {attempt} to stop dispatcher")
 
-            initial_cmd_count = count_cmd_windows()
-            logging.info(f"Initial CMD count: {initial_cmd_count}")
+        initial_cmd_count = count_cmd_windows()
+        logging.info(f"count: {initial_cmd_count}")
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
 
-            # Step 1: Focus OMP app and send keys to launch dispatcher stop
-            omp_window = omp_app.top_window()
-            omp_window.set_focus()
-            time.sleep(1)
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending U...")
+        omp_window.type_keys('U')
+        time.sleep(2)
+        logging.info("Sending LEFT...")
+        send_keys("{LEFT}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 2}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(2)
+        logging.info("Sending DOWN...")
+        send_keys("{DOWN 4}")
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        logging.info("Initiated Installing project solution Build.")
+        time.sleep(30)
 
-            logging.info("Sending Alt + U...")
-            omp_window.type_keys('%u')
-            time.sleep(2)
-            logging.info("Sending W...")
-            omp_window.type_keys('W')
-            time.sleep(2)
-            logging.info("Sending C...")
-            omp_window.type_keys('C')
-            time.sleep(2)
-            logging.info("Sending C...")
-            omp_window.type_keys('C')
-            time.sleep(2)
-            logging.info("Sending ENTER...")
-            send_keys("{ENTER}")
-            time.sleep(10)
-
-            # Step 2: Check for new CMD prompt
-            logging.info("Checking for new CMD window...")
-            window_found = False
-            for _ in range(6):
-                current_cmd_count = count_cmd_windows()
-                logging.info(f"Current CMD count: {current_cmd_count}")
-                if current_cmd_count > initial_cmd_count:
-                    logging.info("New CMD window detected.")
-                    window_found = True
-                    break
-                else:
-                    logging.info("Waiting for CMD window...")
-                time.sleep(5)
-
-            if not window_found:
-                logging.warning(f"No new CMD window detected in attempt {attempt}")
-                if attempt < max_retries:
-                    logging.info("Retrying full dispatcher stop sequence...")
-                    continue
-                else:
-                    logging.error("Max retries reached. CMD window not detected.")
-                    sys.exit(1)
-
-            # Step 3: CMD is open - send dispatcher stop commands
-            logging.info(f"Sending pushd command to: {dispatcher_path}")
-            send_keys(f'pushd {dispatcher_path}')
-            send_keys('{ENTER}')
-            time.sleep(2)
-
-            logging.info("Sending dispatcher stop command...")
-            send_keys('DispatcherManagementAction.cmd stop /all')
-            send_keys('{ENTER}')
-            time.sleep(30)
-
-            pyperclip.copy("")  # Clear clipboard before copying output
-            send_keys("^a")
-            time.sleep(1)
-            send_keys("^c")
-            time.sleep(1)
-            output = pyperclip.paste()
-            logging.info("Captured CMD output")
-
-            # Step 4: Check for success
-            success_keywords = ["success", "stopped"]
-            if any(keyword in output.lower() for keyword in success_keywords):
-                logging.info("Dispatcher stopped successfully.")
+        logging.info("Checking for new Command Prompt window...")
+        window_found = False
+        for _ in range(6):
+            current_cmd_count = count_cmd_windows()
+            logging.info(f" current count: {current_cmd_count}")
+            
+            if current_cmd_count > initial_cmd_count:
+                logging.info(f"New Command Prompt window detected. Initial: {initial_cmd_count}, current: {current_cmd_count}")
+                window_found = True
                 break
             else:
-                logging.error("Dispatcher stop failed.")
-                if attempt == max_retries:
-                    sys.exit(1)
-                else:
-                    logging.info("Retrying full dispatcher stop sequence...")
+                logging.info("Waiting for CMD window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("New Command Prompt window not detected after project build. Exiting...")
+            sys.exit(1)
+
 
     except Exception as e:
-        logging.error(f"Error in stop_dispatcher: {e}")
-        sys.exit(1)
-
-    finally:
-        logging.info("Closing CMD window...")
-        try:
-            send_keys('exit')
-            send_keys('{ENTER}')
-            logging.info("CMD window closed.")
-            time.sleep(10)
-        except Exception as e:
-            logging.warning(f"Failed to close CMD: {e}")
+        logging.error(f"Error during project Solution Build: {e}")
