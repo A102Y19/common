@@ -1,23 +1,68 @@
-        logging.info("Waiting for OMP Data Change Manager to launch...")
-        time.sleep(30)
+def project_solution_build(omp_app):
+    try:
+        max_retries = 2  # Maximum number of retries
+        attempt = 0
 
-        # Check if 'OMP Data Change Manager' window opened
-        window_found = False
-        for _ in range(3):  # Retry a few times
-            try:
-                windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
-                if windows:
-                    logging.info("OMP Data Change Manager window detected.")
-                    window_found = True
-                    break
+        while attempt <= max_retries:
+            attempt += 1
+            logging.info(f"Attempt {attempt} of {max_retries}...")
+
+            omp_window = omp_app.top_window()
+            omp_window.set_focus()
+            time.sleep(1)
+
+            logging.info("Sending Alt + U...")
+            omp_window.type_keys('%u')
+            time.sleep(2)
+            logging.info("Sending C...")
+            omp_window.type_keys('C')
+            time.sleep(2)
+            logging.info("Sending U...")
+            omp_window.type_keys('U')
+            time.sleep(2)
+            logging.info("Sending LEFT...")
+            send_keys("{LEFT}")
+            time.sleep(2)
+            logging.info("Sending U...")
+            omp_window.type_keys('U')
+            time.sleep(2)
+            logging.info("Sending ENTER...")
+            send_keys("{ENTER}")
+            time.sleep(2)
+            logging.info("Sending DOWN...")
+            send_keys("{DOWN 4}")
+            time.sleep(2)
+            logging.info("Sending ENTER...")
+            send_keys("{ENTER}")
+            logging.info("Initiated Installing project solution Build.")
+            time.sleep(30)
+
+            logging.info("Waiting for OMP Data Change Manager to launch...")
+            time.sleep(30)
+
+            # Check if 'OMP Data Change Manager' window opened
+            window_found = False
+            for _ in range(3):  # Retry a few times within this attempt
+                try:
+                    windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
+                    if windows:
+                        logging.info("OMP Data Change Manager window detected.")
+                        window_found = True
+                        break
                     time.sleep(20)
-            except Exception:
-                logging.info("Waiting for window...")
-            time.sleep(10)
+                except Exception:
+                    logging.info("Waiting for window...")
 
-        if not window_found:
-            logging.error("OMP Data Change Manager did not open. Exiting...")
-            sys.exit(1)
+                time.sleep(10)
+
+            if window_found:
+                logging.info("OMP Data Change Manager launched successfully.")
+                break  # Exit retry loop if successful
+            else:
+                logging.error("OMP Data Change Manager did not open. Retrying...")
+                if attempt == max_retries:
+                    logging.error("Maximum retries reached. Exiting...")
+                    sys.exit(1)
 
     except Exception as e:
-        logging.error(f"Error while selecting build option: {e}")
+        logging.error(f"Error during project Solution Build: {e}")
