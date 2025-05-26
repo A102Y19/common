@@ -1,84 +1,96 @@
-def stop_dispatcher(omp_app, dispatcher_path):
+def stop_dispatcher(omp_app, dispatcher_path, max_retries=2):
     try:
-        initial_cmd_count = count_cmd_windows()
-        logging.info(f"count: {initial_cmd_count}")
-        omp_window = omp_app.top_window()
-        omp_window.set_focus()
-        time.sleep(1)
+        for attempt in range(1, max_retries + 1):
+            logging.info(f"Attempt {attempt} to stop dispatcher")
 
-        logging.info("Sending Alt + U...")
-        omp_window.type_keys('%u')
-        time.sleep(2)
-        logging.info("Sending W...")
-        omp_window.type_keys('W')
-        time.sleep(2)
-        logging.info("Sending C...")
-        omp_window.type_keys('C')
-        time.sleep(2)
-        logging.info("Sending C...")
-        omp_window.type_keys('C')
-        time.sleep(2)
-        logging.info("Sending ENTER...")
-        send_keys("{ENTER}")
-        time.sleep(10)
+            initial_cmd_count = count_cmd_windows()
+            logging.info(f"Initial CMD count: {initial_cmd_count}")
 
-        # Check if CMD opened
-        logging.info("Checking for new Command Prompt window...")
-        window_found = False
-        for _ in range(6):
-            current_cmd_count = count_cmd_windows()
-            logging.info(f" current count: {current_cmd_count}")
-            
-            if current_cmd_count > initial_cmd_count:
-                logging.info(f"New Command Prompt window detected. Initial: {initial_cmd_count}, current: {current_cmd_count}")
-                window_found = True
+            # Step 1: Focus OMP app and send keys to launch dispatcher stop
+            omp_window = omp_app.top_window()
+            omp_window.set_focus()
+            time.sleep(1)
+
+            logging.info("Sending Alt + U...")
+            omp_window.type_keys('%u')
+            time.sleep(2)
+            logging.info("Sending W...")
+            omp_window.type_keys('W')
+            time.sleep(2)
+            logging.info("Sending C...")
+            omp_window.type_keys('C')
+            time.sleep(2)
+            logging.info("Sending C...")
+            omp_window.type_keys('C')
+            time.sleep(2)
+            logging.info("Sending ENTER...")
+            send_keys("{ENTER}")
+            time.sleep(10)
+
+            # Step 2: Check for new CMD prompt
+            logging.info("Checking for new CMD window...")
+            window_found = False
+            for _ in range(6):
+                current_cmd_count = count_cmd_windows()
+                logging.info(f"Current CMD count: {current_cmd_count}")
+                if current_cmd_count > initial_cmd_count:
+                    logging.info("New CMD window detected.")
+                    window_found = True
+                    break
+                else:
+                    logging.info("Waiting for CMD window...")
+                time.sleep(5)
+
+            if not window_found:
+                logging.warning(f"No new CMD window detected in attempt {attempt}")
+                if attempt < max_retries:
+                    logging.info("Retrying full dispatcher stop sequence...")
+                    continue
+                else:
+                    logging.error("Max retries reached. CMD window not detected.")
+                    sys.exit(1)
+
+            # Step 3: CMD is open - send dispatcher stop commands
+            logging.info(f"Sending pushd command to: {dispatcher_path}")
+            send_keys(f'pushd {dispatcher_path}')
+            send_keys('{ENTER}')
+            time.sleep(2)
+
+            logging.info("Sending dispatcher stop command...")
+            send_keys('DispatcherManagementAction.cmd stop /all')
+            send_keys('{ENTER}')
+            time.sleep(30)
+
+            pyperclip.copy("")  # Clear clipboard before copying output
+            send_keys("^a")
+            time.sleep(1)
+            send_keys("^c")
+            time.sleep(1)
+            output = pyperclip.paste()
+            logging.info("Captured CMD output")
+
+            # Step 4: Check for success
+            success_keywords = ["success", "stopped"]
+            if any(keyword in output.lower() for keyword in success_keywords):
+                logging.info("Dispatcher stopped successfully.")
                 break
             else:
-                logging.info("Waiting for CMD window...")
-            time.sleep(5)
+                logging.error("Dispatcher stop failed.")
+                if attempt == max_retries:
+                    sys.exit(1)
+                else:
+                    logging.info("Retrying full dispatcher stop sequence...")
 
-        if not window_found:
-            logging.error("New Command Prompt window not detected to perform stop_dispatcher. Exiting...")
-            sys.exit(1)
-
-        # Send pushd <dispatcher_path> and execute stop command
-        logging.info(f"Sending pushd command to path: {dispatcher_path}")
-        send_keys(f'pushd {dispatcher_path}')
-        send_keys('{ENTER}')
-        time.sleep(2)
-        logging.info("Sending stop command...")
-        send_keys(r'DispatcherManagementAction.cmd{SPACE}stop{SPACE}/all')
-        send_keys('{ENTER}')
-        logging.info("Dispatcher stop command sent.")
-        time.sleep(30)
-
-        send_keys("^a")
-        time.sleep(1)
-        send_keys("^c")
-        time.sleep(1)
-        output = pyperclip.paste()
-        logging.info("captured CMD output")
-
-        success_keywords = [
-            "success"
-        ]
-        if any(keyword in output.lower() for keyword in success_keywords):
-            logging.info("Dispatcher stopped successfully")
-
-        else:
-            logging.info("Dispatcher stop failed, Terminating script")
-            logging.error("Dispatcher stop failed!")
-            sys.exit(1)
-            
     except Exception as e:
         logging.error(f"Error in stop_dispatcher: {e}")
-    
+        sys.exit(1)
+
     finally:
-        logging.info("closing CMD window")
+        logging.info("Closing CMD window...")
         try:
             send_keys('exit')
             send_keys('{ENTER}')
-            logging.info(f"CMD closed successfully")
+            logging.info("CMD window closed.")
             time.sleep(10)
         except Exception as e:
             logging.warning(f"Failed to close CMD: {e}")
