@@ -1,15 +1,84 @@
-2025-05-19 15:20:13,632 - INFO - Removing active script execution started
-python: can't open file 'C:\\awsusdmjfsxn01.jnj.com\\eth_get_dev_omp\\OMP_JNJ_MD_OMEGA_LAB\\OMPartners\\development\\dispatcher\x08in\\Automation\rdp_users_pyautogui.py': [Errno 2] No such file or directory
-Traceback (most recent call last):
-<unknown>:2: SyntaxWarning: invalid escape sequence '\e'
-<unknown>:1: SyntaxWarning: invalid escape sequence '\e'
-  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\PAK_Deployment.py", line 725, in <module>
-    remove_active_users()
-    ~~~~~~~~~~~~~~~~~~~^^
-  File "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\PAK_Deployment.py", line 160, in remove_active_users
-    subprocess.run(["python", "\\awsusdmjfsxn01.jnj.com\eth_get_dev_omp\OMP_JNJ_MD_OMEGA_LAB\OMPartners\development\dispatcher\bin\Automation\rdp_users_pyautogui.py"], check=True)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\SA-ITS-APSOMINT-LAB\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
-    raise CalledProcessError(retcode, process.args,
-                             output=stdout, stderr=stderr)
-subprocess.CalledProcessError: Command '['python', '\\awsusdmjfsxn01.jnj.com\\eth_get_dev_omp\\OMP_JNJ_MD_OMEGA_LAB\\OMPartners\\development\\dispatcher\x08in\\Automation\rdp_users_pyautogui.py']' returned non-zero exit status 2.
+def stop_dispatcher(omp_app, dispatcher_path):
+    try:
+        initial_cmd_count = count_cmd_windows()
+        logging.info(f"count: {initial_cmd_count}")
+        omp_window = omp_app.top_window()
+        omp_window.set_focus()
+        time.sleep(1)
+
+        logging.info("Sending Alt + U...")
+        omp_window.type_keys('%u')
+        time.sleep(2)
+        logging.info("Sending W...")
+        omp_window.type_keys('W')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending C...")
+        omp_window.type_keys('C')
+        time.sleep(2)
+        logging.info("Sending ENTER...")
+        send_keys("{ENTER}")
+        time.sleep(10)
+
+        # Check if CMD opened
+        logging.info("Checking for new Command Prompt window...")
+        window_found = False
+        for _ in range(6):
+            current_cmd_count = count_cmd_windows()
+            logging.info(f" current count: {current_cmd_count}")
+            
+            if current_cmd_count > initial_cmd_count:
+                logging.info(f"New Command Prompt window detected. Initial: {initial_cmd_count}, current: {current_cmd_count}")
+                window_found = True
+                break
+            else:
+                logging.info("Waiting for CMD window...")
+            time.sleep(5)
+
+        if not window_found:
+            logging.error("New Command Prompt window not detected to perform stop_dispatcher. Exiting...")
+            sys.exit(1)
+
+        # Send pushd <dispatcher_path> and execute stop command
+        logging.info(f"Sending pushd command to path: {dispatcher_path}")
+        send_keys(f'pushd {dispatcher_path}')
+        send_keys('{ENTER}')
+        time.sleep(2)
+        logging.info("Sending stop command...")
+        send_keys(r'DispatcherManagementAction.cmd{SPACE}stop{SPACE}/all')
+        send_keys('{ENTER}')
+        logging.info("Dispatcher stop command sent.")
+        time.sleep(30)
+
+        send_keys("^a")
+        time.sleep(1)
+        send_keys("^c")
+        time.sleep(1)
+        output = pyperclip.paste()
+        logging.info("captured CMD output")
+
+        success_keywords = [
+            "success"
+        ]
+        if any(keyword in output.lower() for keyword in success_keywords):
+            logging.info("Dispatcher stopped successfully")
+
+        else:
+            logging.info("Dispatcher stop failed, Terminating script")
+            logging.error("Dispatcher stop failed!")
+            sys.exit(1)
+            
+    except Exception as e:
+        logging.error(f"Error in stop_dispatcher: {e}")
+    
+    finally:
+        logging.info("closing CMD window")
+        try:
+            send_keys('exit')
+            send_keys('{ENTER}')
+            logging.info(f"CMD closed successfully")
+            time.sleep(10)
+        except Exception as e:
+            logging.warning(f"Failed to close CMD: {e}")
