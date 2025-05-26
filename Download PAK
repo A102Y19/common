@@ -1,56 +1,23 @@
-def proejct_solution_build(omp_app):
-    try:
-
-        initial_cmd_count = count_cmd_windows()
-        logging.info(f"count: {initial_cmd_count}")
-        omp_window = omp_app.top_window()
-        omp_window.set_focus()
-        time.sleep(1)
-
-        logging.info("Sending Alt + U...")
-        omp_window.type_keys('%u')
-        time.sleep(2)
-        logging.info("Sending C...")
-        omp_window.type_keys('C')
-        time.sleep(2)
-        logging.info("Sending U...")
-        omp_window.type_keys('U')
-        time.sleep(2)
-        logging.info("Sending LEFT...")
-        send_keys("{LEFT}")
-        time.sleep(2)
-        logging.info("Sending DOWN...")
-        send_keys("{DOWN 2}")
-        time.sleep(2)
-        logging.info("Sending ENTER...")
-        send_keys("{ENTER}")
-        time.sleep(2)
-        logging.info("Sending DOWN...")
-        send_keys("{DOWN 4}")
-        time.sleep(2)
-        logging.info("Sending ENTER...")
-        send_keys("{ENTER}")
-        logging.info("Initiated Installing project solution Build.")
+        logging.info("Waiting for OMP Data Change Manager to launch...")
         time.sleep(30)
 
-        logging.info("Checking for new Command Prompt window...")
+        # Check if 'OMP Data Change Manager' window opened
         window_found = False
-        for _ in range(6):
-            current_cmd_count = count_cmd_windows()
-            logging.info(f" current count: {current_cmd_count}")
-            
-            if current_cmd_count > initial_cmd_count:
-                logging.info(f"New Command Prompt window detected. Initial: {initial_cmd_count}, current: {current_cmd_count}")
-                window_found = True
-                break
-            else:
-                logging.info("Waiting for CMD window...")
-            time.sleep(5)
+        for _ in range(3):  # Retry a few times
+            try:
+                windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
+                if windows:
+                    logging.info("OMP Data Change Manager window detected.")
+                    window_found = True
+                    break
+                    time.sleep(20)
+            except Exception:
+                logging.info("Waiting for window...")
+            time.sleep(10)
 
         if not window_found:
-            logging.error("New Command Prompt window not detected after project build. Exiting...")
+            logging.error("OMP Data Change Manager did not open. Exiting...")
             sys.exit(1)
 
-
     except Exception as e:
-        logging.error(f"Error during project Solution Build: {e}")
+        logging.error(f"Error while selecting build option: {e}")
