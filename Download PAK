@@ -1,68 +1,233 @@
-def project_solution_build(omp_app):
-    try:
-        max_retries = 2  # Maximum number of retries
-        attempt = 0
+###### RUN THIS COMMAND IN TERMINAL TO INSTALL LIBRARIES #####
+#  pip install pyautogui, pyperclip, pandas  #
 
-        while attempt <= max_retries:
-            attempt += 1
-            logging.info(f"Attempt {attempt} of {max_retries}...")
+##### To RUN the SCRIPT #####
+# Place the csv file in the same Directory along with Python file #
+## Commands ##
+#  cd <directory>  #
+#  python rdp_users_pyautogui.py  #
 
-            omp_window = omp_app.top_window()
-            omp_window.set_focus()
+import pyautogui
+from pyautogui import getWindowsWithTitle
+import pyperclip
+import time
+import subprocess
+import re
+import os
+import pandas as pd
+
+#######################################################################################################
+# DO NOT CLICK ANYWHERE UNTIL THE SCRIPT RUNS AND RETURNS TO THIS WINDOW AFTER COMPLETING ALL SERVERS #
+#######################################################################################################
+
+# Handle CSV file for list of Servers
+dir = r'\\awsusdmlfsxn01.jnj.com\opt_pdev3_omp_na\OMP_JNJ_CMD_OPTMS_LAB\OMPartners\development\dispatcher\bin\Automation\PAK\log'
+with open(dir+r'\userlist_servers.txt','r') as file:
+    server_list = [line.strip() for line in file]
+
+server_list = "AWSDMLNVAW0001"
+count = 0
+failed_list = []
+username = r"JNJ\SA-ITS-APSOTINT-LAB"
+password = os.getenv('OMP_key')
+print(password)
+for server in server_list:
+    print(f'Current Server: {server}')
+
+    # Configurations
+    machineName = server  # Replace with actual server name
+    rdp_file = "rdp_conn.rdp"
+
+    # Store Cred for RDP Auto Connect
+    store_cred = f'cmdkey /generic:TERMSRV/{machineName} /user:{username} /pass:{password}'
+    subprocess.run(store_cred, shell = True)
+    time.sleep(2)
+
+    # RDP File for Session
+    with open(rdp_file,"w",encoding="utf-16") as f:
+        f.write(f'''screen mode id:i:2
+    use multimon:i:0
+    desktopwidth:i:1280
+    desktopheight:i:720
+    session bpp:i:32
+    winposstr:s:0,3,0,0,800,600
+    compression:i:1
+    keyboardhook:i:2
+    audiocapturemode:i:0
+    videoplaybackmode:i:1
+    connection type:i:7
+    networkautodetect:i:1
+    bandwidthautodetect:i:1
+    displayconnectionbar:i:1
+    enableworkspacereconnect:i:0
+    disable wallpaper:i:0
+    allow font smoothing:i:0
+    allow desktop composition:i:0
+    disable full window drag:i:1
+    disable menu anims:i:1
+    disable themes:i:0
+    disable cursor setting:i:0
+    bitmapcachepersistenable:i:1
+    full address:s:{machineName}
+    audiomode:i:0
+    redirectprinters:i:1
+    redirectlocation:i:0
+    redirectcomports:i:0
+    redirectsmartcards:i:1
+    redirectwebauthn:i:1
+    redirectclipboard:i:1
+    redirectposdevices:i:0
+    autoreconnection enabled:i:1
+    authentication level:i:2
+    prompt for credentials:i:0
+    negotiate security layer:i:1
+    remoteapplicationmode:i:0
+    alternate shell:s:
+    shell working directory:s:
+    gatewayhostname:s:
+    gatewayusagemethod:i:4
+    gatewaycredentialssource:i:4
+    gatewayprofileusagemethod:i:0
+    promptcredentialonce:i:0
+    gatewaybrokeringtype:i:0
+    use redirection server name:i:0
+    rdgiskdcproxy:i:0
+    kdcproxyname:s:
+    enablerdsaadauth:i:0
+    ''')
+
+    # Call Remote Desktop Connection
+    subprocess.Popen(["mstsc.exe", "/admin", rdp_file])
+    print("Launching RDP session...")
+    time.sleep(8)
+
+    # Handle Confirmation Dialog
+    pyautogui.press('tab', presses=2, interval = 0.2)
+    pyautogui.press('enter')
+    time.sleep(15)
+
+    # Wait for RDP to Load
+    max_wait = 30
+    start = time.time()
+    while True:
+        windows = getWindowsWithTitle(machineName)
+        if windows:
+            # Handle Information Warning of the Server
+            pyautogui.press('enter')
+            time.sleep(20)
+
+            # Go Inside the RDP Window
+            pyautogui.moveTo(800,400)
+            pyautogui.click()
+
+            # Run Command Prompt
+            pyautogui.keyDown('win')
+            time.sleep(0.2)
+            pyautogui.press('r')
+            pyautogui.keyUp('win')
             time.sleep(1)
+            pyautogui.write("cmd",interval=0.1)
+            pyautogui.keyDown('ctrl')
+            time.sleep(0.2)
+            pyautogui.keyDown('shift')
+            time.sleep(0.2)
+            pyautogui.press('enter')
+            pyautogui.keyUp('ctrl')
+            pyautogui.keyUp('shift')
+            time.sleep(3)
 
-            logging.info("Sending Alt + U...")
-            omp_window.type_keys('%u')
-            time.sleep(2)
-            logging.info("Sending C...")
-            omp_window.type_keys('C')
-            time.sleep(2)
-            logging.info("Sending U...")
-            omp_window.type_keys('U')
-            time.sleep(2)
-            logging.info("Sending LEFT...")
-            send_keys("{LEFT}")
-            time.sleep(2)
-            logging.info("Sending U...")
-            omp_window.type_keys('U')
-            time.sleep(2)
-            logging.info("Sending ENTER...")
-            send_keys("{ENTER}")
-            time.sleep(2)
-            logging.info("Sending DOWN...")
-            send_keys("{DOWN 4}")
-            time.sleep(2)
-            logging.info("Sending ENTER...")
-            send_keys("{ENTER}")
-            logging.info("Initiated Installing project solution Build.")
-            time.sleep(30)
+            # Handle Confirmation for cmd Dialog
+            pyautogui.press('tab', presses=2, interval = 0.2)
+            pyautogui.press('enter')
+            time.sleep(4)
 
-            logging.info("Waiting for OMP Data Change Manager to launch...")
-            time.sleep(30)
+            # Get All Sessions
+            session_cmd = "query session"
+            pyperclip.copy(session_cmd)
+            pyautogui.keyDown('ctrl')
+            time.sleep(0.2)
+            pyautogui.press('v')
+            time.sleep(0.1)
+            pyautogui.keyUp('ctrl')
+            pyautogui.press('enter')
+            time.sleep(4)
 
-            # Check if 'OMP Data Change Manager' window opened
-            window_found = False
-            for _ in range(3):  # Retry a few times within this attempt
-                try:
-                    windows = findwindows.find_windows(title_re=".*OMP Data Change Manager.*", backend='win32')
-                    if windows:
-                        logging.info("OMP Data Change Manager window detected.")
-                        window_found = True
-                        break
-                    time.sleep(20)
-                except Exception:
-                    logging.info("Waiting for window...")
+            # Copy the Session Data
+            pyautogui.keyDown('ctrl')
+            time.sleep(0.2)
+            pyautogui.press('a')
+            time.sleep(0.2)
+            pyautogui.press('c')
+            time.sleep(0.2)
+            pyautogui.keyUp('ctrl')
 
-                time.sleep(10)
+            # Paste Data for Parsing
+            output = pyperclip.paste()
 
-            if window_found:
-                logging.info("OMP Data Change Manager launched successfully.")
-                break  # Exit retry loop if successful
-            else:
-                logging.error("OMP Data Change Manager did not open. Retrying...")
-                if attempt == max_retries:
-                    logging.error("Maximum retries reached. Exiting...")
-                    sys.exit(1)
+            # Parsing the Session Data
+            session_lines = output.strip().splitlines()
+            current_session_id = None
+            sessions_to_logoff = []
 
-    except Exception as e:
-        logging.error(f"Error during project Solution Build: {e}")
+            for line in session_lines:
+                match = re.search(r'(\S+)\s+(\S+)\s+(\d+)\s+(Active|Disc)',line)
+                if match:
+                    session_name, user, session_id, state = match.groups()
+                    if username.lower().split('\\')[-1] in line.lower():
+                        current_session_id = session_id
+                    else:
+                        sessions_to_logoff.append((session_name, user, session_id, state))
+
+            print(sessions_to_logoff)
+            # Loging Off all other Users
+            for session in sessions_to_logoff:
+                print(f'Logging off Session:{session[0]} User:{session[1]} ID:{session[2]} State:{session[3]}')
+                cmd = f'logoff {session[2]}'
+                pyperclip.copy(cmd)
+                pyautogui.keyDown('ctrl')
+                time.sleep(0.2)
+                pyautogui.press('v')
+                time.sleep(0.1)
+                pyautogui.keyUp('ctrl')
+                pyautogui.press('enter')
+                time.sleep(4)
+
+            # Logging of Current User
+            print("Logging off Current Session")
+            cmd = f'logoff {current_session_id}'
+            pyperclip.copy(cmd)
+            pyautogui.keyDown('ctrl')
+            time.sleep(0.2)
+            pyautogui.press('v')
+            time.sleep(0.1)
+            pyautogui.keyUp('ctrl')
+            pyautogui.press('enter')
+            time.sleep(4)
+
+            # Delete RDP Credentials
+            delete_cred = f'cmdkey /delete: TERMSRV/{machineName}'
+            subprocess.run(delete_cred, shell = True)
+            time.sleep(2)
+
+            # Delete RDP File
+            os.remove(rdp_file)
+            time.sleep(2)
+            print(f'Successfully Logged Off all Users on Server: {server}\n')
+            break
+            
+        if time.time() - start > max_wait:
+            failed_list.append(machineName)
+            break
+        time.sleep(0.5)
+
+    count+=1
+
+print(f'Completed the Task for {count - len(failed_list)} Servers Successfully!')
+print(f'Failed to Connect {len(failed_list)} Servers:\n')
+
+log_file = dir+r"\failed_serverlist.log"
+open(log_file,'w').close()
+with open(log_file,'a') as f:
+    for item in failed_list:
+        f.write(f"{item}\n")
+print(f"Failed Logs saved in {log_file}")
